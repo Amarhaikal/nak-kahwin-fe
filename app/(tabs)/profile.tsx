@@ -1,22 +1,61 @@
-import React from 'react';
-import { StyleSheet, View, ScrollView, Pressable, Switch, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, View, ScrollView, Pressable, Switch, Platform, TextInput } from 'react-native';
 import { useColorScheme, useTheme } from '@/hooks/use-color-scheme';
+import { useWeddingDetails } from '@/hooks/use-wedding-details';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { LinearGradient } from 'expo-linear-gradient';
 
+// ISO string to YYYY-MM-DD
+const toLocalDateString = (isoString: string) => {
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return isoString;
+    return d.toISOString().split('T')[0];
+  } catch (e) {
+    return isoString;
+  }
+};
+
+// YYYY-MM-DD to ISO string
+const toISOString = (dateStr: string) => {
+  try {
+    if (dateStr.includes('T')) return dateStr;
+    const cleanDate = dateStr.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(cleanDate)) {
+      return `${cleanDate}T12:00:00.000Z`; // UTC Noon
+    }
+    return dateStr;
+  } catch (e) {
+    return dateStr;
+  }
+};
+
 export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
   const { themePreference, setThemePreference } = useTheme();
+  
+  const {
+    coupleNames,
+    updateCoupleNames,
+    marriage,
+    updateMarriage,
+    engagement,
+    updateEngagement,
+  } = useWeddingDetails();
 
   const isDarkMode = colorScheme === 'dark';
+  const [editTab, setEditTab] = useState<'marriage' | 'engagement'>('marriage');
 
   const handleToggleTheme = (value: boolean) => {
     setThemePreference(value ? 'dark' : 'light');
   };
+
+  const activeEventData = editTab === 'marriage' ? marriage : engagement;
+  const updateActiveEvent = editTab === 'marriage' ? updateMarriage : updateEngagement;
 
   return (
     <ThemedView style={styles.container}>
@@ -46,35 +85,124 @@ export default function ProfileScreen() {
           </View>
         </LinearGradient>
 
-        {/* Wedding Summary Card */}
+        {/* Wedding / Event Customizer Card */}
         <View style={styles.cardContainer}>
           <View style={[styles.infoCard, { 
             backgroundColor: isDarkMode ? '#1E1E1E' : '#ffffff',
             borderColor: isDarkMode ? '#2D3748' : '#E2E8F0',
           }]}>
             <View style={styles.cardHeader}>
-              <IconSymbol name="house.fill" size={20} color={theme.tint} />
-              <ThemedText style={[styles.cardTitle, { color: theme.tint }]}>WEDDING DETAILS</ThemedText>
+              <IconSymbol name="pencil.and.outline" size={20} color={theme.tint} />
+              <ThemedText style={[styles.cardTitle, { color: theme.tint }]}>CUSTOMIZE EVENTS</ThemedText>
             </View>
             
-            <View style={styles.detailRow}>
-              <ThemedText style={styles.detailLabel}>Partner</ThemedText>
-              <ThemedText style={styles.detailValue}>Syamimie</ThemedText>
-            </View>
-            
-            <View style={styles.divider} />
-            
-            <View style={styles.detailRow}>
-              <ThemedText style={styles.detailLabel}>Date</ThemedText>
-              <ThemedText style={styles.detailValue}>August 8, 2027</ThemedText>
+            {/* Couple Names Input */}
+            <View style={styles.inputContainer}>
+              <ThemedText style={styles.inputLabel}>Couple Names</ThemedText>
+              <TextInput
+                style={[styles.textInput, {
+                  backgroundColor: isDarkMode ? '#2D3748' : '#F1F5F9',
+                  color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
+                  borderColor: isDarkMode ? '#4A5568' : '#CBD5E1',
+                }]}
+                value={coupleNames}
+                onChangeText={updateCoupleNames}
+                placeholder="e.g. Amar & Syamimie"
+                placeholderTextColor={isDarkMode ? '#A0AEC0' : '#94A3B8'}
+              />
             </View>
 
             <View style={styles.divider} />
-            
-            <View style={styles.detailRow}>
-              <ThemedText style={styles.detailLabel}>Venue</ThemedText>
-              <ThemedText style={styles.detailValue}>De'Emerald Garden, Banting</ThemedText>
+
+            {/* Edit Tab Switcher */}
+            <View style={styles.editSwitcherContainer}>
+              <Pressable
+                onPress={() => setEditTab('marriage')}
+                style={[
+                  styles.editTabButton,
+                  editTab === 'marriage' && {
+                    backgroundColor: isDarkMode ? 'rgba(167, 139, 250, 0.2)' : '#ECE9FC',
+                    borderColor: theme.tint,
+                  }
+                ]}
+              >
+                <ThemedText style={[
+                  styles.editTabButtonText,
+                  { color: editTab === 'marriage' ? theme.tint : (isDarkMode ? '#A0AEC0' : '#64748B') },
+                  editTab === 'marriage' && { fontWeight: '700' }
+                ]}>
+                  Nikah
+                </ThemedText>
+              </Pressable>
+              
+              <Pressable
+                onPress={() => setEditTab('engagement')}
+                style={[
+                  styles.editTabButton,
+                  editTab === 'engagement' && {
+                    backgroundColor: isDarkMode ? 'rgba(167, 139, 250, 0.2)' : '#ECE9FC',
+                    borderColor: theme.tint,
+                  }
+                ]}
+              >
+                <ThemedText style={[
+                  styles.editTabButtonText,
+                  { color: editTab === 'engagement' ? theme.tint : (isDarkMode ? '#A0AEC0' : '#64748B') },
+                  editTab === 'engagement' && { fontWeight: '700' }
+                ]}>
+                  Tunang
+                </ThemedText>
+              </Pressable>
             </View>
+
+            {/* Date Input */}
+            <View style={styles.inputContainer}>
+              <ThemedText style={styles.inputLabel}>Date (YYYY-MM-DD)</ThemedText>
+              <TextInput
+                style={[styles.textInput, {
+                  backgroundColor: isDarkMode ? '#2D3748' : '#F1F5F9',
+                  color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
+                  borderColor: isDarkMode ? '#4A5568' : '#CBD5E1',
+                }]}
+                value={toLocalDateString(activeEventData.date)}
+                onChangeText={(text) => updateActiveEvent({ date: toISOString(text) })}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={isDarkMode ? '#A0AEC0' : '#94A3B8'}
+              />
+            </View>
+
+            {/* Time Input */}
+            <View style={styles.inputContainer}>
+              <ThemedText style={styles.inputLabel}>Time</ThemedText>
+              <TextInput
+                style={[styles.textInput, {
+                  backgroundColor: isDarkMode ? '#2D3748' : '#F1F5F9',
+                  color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
+                  borderColor: isDarkMode ? '#4A5568' : '#CBD5E1',
+                }]}
+                value={activeEventData.time}
+                onChangeText={(text) => updateActiveEvent({ time: text })}
+                placeholder="e.g. 11:00 AM"
+                placeholderTextColor={isDarkMode ? '#A0AEC0' : '#94A3B8'}
+              />
+            </View>
+
+            {/* Venue Input */}
+            <View style={styles.inputContainer}>
+              <ThemedText style={styles.inputLabel}>Venue Place</ThemedText>
+              <TextInput
+                style={[styles.textInput, {
+                  backgroundColor: isDarkMode ? '#2D3748' : '#F1F5F9',
+                  color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
+                  borderColor: isDarkMode ? '#4A5568' : '#CBD5E1',
+                }]}
+                value={activeEventData.venue}
+                onChangeText={(text) => updateActiveEvent({ venue: text })}
+                placeholder="e.g. Venue / Place"
+                placeholderTextColor={isDarkMode ? '#A0AEC0' : '#94A3B8'}
+              />
+            </View>
+
           </View>
         </View>
 
@@ -300,5 +428,58 @@ const styles = StyleSheet.create({
   rowDivider: {
     height: 1,
     backgroundColor: 'rgba(0,0,0,0.03)',
+  },
+  inputContainer: {
+    marginBottom: 14,
+    width: '100%',
+  },
+  inputLabel: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+    opacity: 0.65,
+  },
+  textInput: {
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  editSwitcherContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginVertical: 14,
+    width: '100%',
+  },
+  editTabButton: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  editTabButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  imageSelectorContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    width: '100%',
+  },
+  imageOption: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  imageOptionText: {
+    fontSize: 13,
   },
 });

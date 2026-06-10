@@ -1,10 +1,11 @@
 import { ThemedText } from "@/components/themed-text";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useWeddingDetails } from "@/hooks/use-wedding-details";
 import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useState } from "react";
-import { Dimensions, Platform, StyleSheet, View } from "react-native";
+import React, { useEffect, useState, useRef } from "react";
+import { Dimensions, Platform, StyleSheet, View, Pressable, ScrollView } from "react-native";
 import Animated, {
   Extrapolation,
   interpolate,
@@ -15,15 +16,25 @@ import Animated, {
 
 const { height } = Dimensions.get("window");
 
-// TARGET WEDDING DATE: August 8, 2027
-const TARGET_DATE = new Date("2027-08-08T11:00:00");
-
 export default function MainScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const accentColor = isDark ? "#A78BFA" : "#7C3AED"; // Theme-based purple accent
 
-  const [timeLeft, setTimeLeft] = useState({
+  const { activeEvent, setActiveEvent, marriage, engagement, coupleNames } = useWeddingDetails();
+  const activeDetails = activeEvent === 'marriage' ? marriage : engagement;
+
+  const horizontalScrollRef = useRef<ScrollView>(null);
+  const isInternalScroll = useRef(false);
+
+  const [marriageTimeLeft, setMarriageTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
+
+  const [engagementTimeLeft, setEngagementTimeLeft] = useState({
     days: 0,
     hours: 0,
     minutes: 0,
@@ -38,8 +49,9 @@ export default function MainScreen() {
   });
 
   useEffect(() => {
-    const calculateTimeLeft = () => {
-      const difference = TARGET_DATE.getTime() - new Date().getTime();
+    const calculateTimeLeftForDate = (targetDateStr: string) => {
+      const tDate = new Date(targetDateStr);
+      const difference = tDate.getTime() - new Date().getTime();
       if (difference <= 0) {
         return { days: 0, hours: 0, minutes: 0, seconds: 0 };
       }
@@ -51,15 +63,45 @@ export default function MainScreen() {
       };
     };
 
-    // Calculate immediately
-    setTimeLeft(calculateTimeLeft());
+    const updateAllTimers = () => {
+      setMarriageTimeLeft(calculateTimeLeftForDate(marriage.date));
+      setEngagementTimeLeft(calculateTimeLeftForDate(engagement.date));
+    };
 
-    const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
-    }, 1000);
+    updateAllTimers();
+    const timer = setInterval(updateAllTimers, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [marriage.date, engagement.date]);
+
+  // Sync state when user swipes
+  const onScrollEnd = (event: any) => {
+    const contentOffset = event.nativeEvent.contentOffset.x;
+    const viewSize = event.nativeEvent.layoutMeasurement.width;
+    if (viewSize <= 0) return;
+    const index = Math.round(contentOffset / viewSize);
+    isInternalScroll.current = true;
+    if (index === 0 && activeEvent !== 'marriage') {
+      setActiveEvent('marriage');
+    } else if (index === 1 && activeEvent !== 'engagement') {
+      setActiveEvent('engagement');
+    }
+  };
+
+  // Sync scroll position when activeEvent updates from outside
+  useEffect(() => {
+    if (isInternalScroll.current) {
+      isInternalScroll.current = false;
+      return;
+    }
+    if (horizontalScrollRef.current) {
+      const page = activeEvent === 'marriage' ? 0 : 1;
+      horizontalScrollRef.current.scrollTo({
+        x: page * Dimensions.get("window").width,
+        animated: true,
+      });
+    }
+  }, [activeEvent]);
 
   const formatNumber = (num: number) => {
     return num.toString().padStart(2, "0");
@@ -106,6 +148,8 @@ export default function MainScreen() {
     };
   });
 
+  const heroImageSource = require("@/assets/images/background-2.jpg");
+
   return (
     <View
       style={[
@@ -122,7 +166,7 @@ export default function MainScreen() {
         ]}
       >
         <Image
-          source={require("@/assets/images/background-2.jpg")}
+          source={heroImageSource}
           style={styles.heroImage}
           contentFit="cover"
         />
@@ -147,156 +191,196 @@ export default function MainScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Top Spacer to push everything below the fold except the countdown card */}
-        <View style={{ height: height - 355 }} />
+        <View style={{ height: height - 370 }} />
 
-        {/* Glassmorphic Countdown Card */}
-        <View style={styles.cardWrapper}>
-          <BlurView
-            tint={isDark ? "dark" : "light"}
-            intensity={Platform.OS === "ios" ? 65 : 85}
-            style={[
-              styles.countdownCard,
-              {
-                borderColor: isDark
-                  ? "rgba(255, 255, 255, 0.12)"
-                  : "rgba(0, 0, 0, 0.08)",
-                backgroundColor: isDark
-                  ? "rgba(0, 0, 0, 0.45)"
-                  : "rgba(255, 255, 255, 0.65)",
-              },
-            ]}
+        {/* Horizontal Paging ScrollView for Countdown Cards */}
+        <View style={styles.horizontalScrollWrapper}>
+          <ScrollView
+            ref={horizontalScrollRef}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={onScrollEnd}
+            scrollEventThrottle={16}
+            decelerationRate="fast"
+            contentContainerStyle={styles.horizontalScrollContent}
           >
-            <ThemedText
-              style={[
-                styles.countdownHeader,
-                { color: accentColor },
-              ]}
-            >
-              Save the Date
-            </ThemedText>
-            <ThemedText
-              style={[
-                styles.coupleNames,
-                { color: isDark ? "#ffffff" : "#1E1B4B" },
-              ]}
-            >
-              Amar & Syamimie
-            </ThemedText>
-            <ThemedText style={[styles.dateText, { color: accentColor }]}>
-              {formatDateString(TARGET_DATE)}
-            </ThemedText>
-
-            <View style={styles.timerContainer}>
-              {/* Days */}
-              <View style={styles.timeBlock}>
-                <ThemedText style={[styles.timeNumber, { color: accentColor }]}>
-                  {formatNumber(timeLeft.days)}
-                </ThemedText>
-                <ThemedText
-                  style={[
-                    styles.timeLabel,
-                    {
-                      color: isDark
-                        ? "rgba(255, 255, 255, 0.5)"
-                        : "rgba(0, 0, 0, 0.5)",
-                    },
-                  ]}
-                >
-                  Days
-                </ThemedText>
-              </View>
-
-              <View
+            {/* Page 1: Nikah Countdown */}
+            <View style={styles.cardPage}>
+              <BlurView
+                tint={isDark ? "dark" : "light"}
+                intensity={Platform.OS === "ios" ? 65 : 85}
                 style={[
-                  styles.divider,
+                  styles.countdownCard,
                   {
-                    backgroundColor: isDark
+                    borderColor: isDark
                       ? "rgba(255, 255, 255, 0.12)"
-                      : "rgba(0, 0, 0, 0.1)",
+                      : "rgba(0, 0, 0, 0.08)",
+                    backgroundColor: isDark
+                      ? "rgba(0, 0, 0, 0.45)"
+                      : "rgba(255, 255, 255, 0.65)",
                   },
                 ]}
-              />
+              >
+                <ThemedText style={[styles.countdownHeader, { color: accentColor }]}>
+                  Save the Date
+                </ThemedText>
+                <ThemedText style={[styles.coupleNames, { color: isDark ? "#ffffff" : "#1E1B4B" }]}>
+                  {coupleNames}
+                </ThemedText>
+                <ThemedText style={[styles.dateText, { color: accentColor }]}>
+                  {formatDateString(new Date(marriage.date))}
+                </ThemedText>
 
-              {/* Hours */}
-              <View style={styles.timeBlock}>
-                <ThemedText style={[styles.timeNumber, { color: accentColor }]}>
-                  {formatNumber(timeLeft.hours)}
-                </ThemedText>
-                <ThemedText
-                  style={[
-                    styles.timeLabel,
-                    {
-                      color: isDark
-                        ? "rgba(255, 255, 255, 0.5)"
-                        : "rgba(0, 0, 0, 0.5)",
-                    },
-                  ]}
-                >
-                  Hours
-                </ThemedText>
-              </View>
+                <View style={styles.timerContainer}>
+                  {/* Days */}
+                  <View style={styles.timeBlock}>
+                    <ThemedText style={[styles.timeNumber, { color: accentColor }]}>
+                      {formatNumber(marriageTimeLeft.days)}
+                    </ThemedText>
+                    <ThemedText style={[styles.timeLabel, { color: isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)" }]}>
+                      Days
+                    </ThemedText>
+                  </View>
 
-              <View
-                style={[
-                  styles.divider,
-                  {
-                    backgroundColor: isDark
-                      ? "rgba(255, 255, 255, 0.12)"
-                      : "rgba(0, 0, 0, 0.1)",
-                  },
-                ]}
-              />
+                  <View style={[styles.divider, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.1)" }]} />
 
-              {/* Minutes */}
-              <View style={styles.timeBlock}>
-                <ThemedText style={[styles.timeNumber, { color: accentColor }]}>
-                  {formatNumber(timeLeft.minutes)}
-                </ThemedText>
-                <ThemedText
-                  style={[
-                    styles.timeLabel,
-                    {
-                      color: isDark
-                        ? "rgba(255, 255, 255, 0.5)"
-                        : "rgba(0, 0, 0, 0.5)",
-                    },
-                  ]}
-                >
-                  Mins
-                </ThemedText>
-              </View>
+                  {/* Hours */}
+                  <View style={styles.timeBlock}>
+                    <ThemedText style={[styles.timeNumber, { color: accentColor }]}>
+                      {formatNumber(marriageTimeLeft.hours)}
+                    </ThemedText>
+                    <ThemedText style={[styles.timeLabel, { color: isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)" }]}>
+                      Hours
+                    </ThemedText>
+                  </View>
 
-              <View
-                style={[
-                  styles.divider,
-                  {
-                    backgroundColor: isDark
-                      ? "rgba(255, 255, 255, 0.12)"
-                      : "rgba(0, 0, 0, 0.1)",
-                  },
-                ]}
-              />
+                  <View style={[styles.divider, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.1)" }]} />
 
-              {/* Seconds */}
-              <View style={styles.timeBlock}>
-                <ThemedText style={[styles.timeNumber, { color: accentColor }]}>
-                  {formatNumber(timeLeft.seconds)}
-                </ThemedText>
-                <ThemedText
-                  style={[
-                    styles.timeLabel,
-                    {
-                      color: isDark
-                        ? "rgba(255, 255, 255, 0.5)"
-                        : "rgba(0, 0, 0, 0.5)",
-                    },
-                  ]}
-                >
-                  Secs
-                </ThemedText>
-              </View>
+                  {/* Minutes */}
+                  <View style={styles.timeBlock}>
+                    <ThemedText style={[styles.timeNumber, { color: accentColor }]}>
+                      {formatNumber(marriageTimeLeft.minutes)}
+                    </ThemedText>
+                    <ThemedText style={[styles.timeLabel, { color: isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)" }]}>
+                      Mins
+                    </ThemedText>
+                  </View>
+
+                  <View style={[styles.divider, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.1)" }]} />
+
+                  {/* Seconds */}
+                  <View style={styles.timeBlock}>
+                    <ThemedText style={[styles.timeNumber, { color: accentColor }]}>
+                      {formatNumber(marriageTimeLeft.seconds)}
+                    </ThemedText>
+                    <ThemedText style={[styles.timeLabel, { color: isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)" }]}>
+                      Secs
+                    </ThemedText>
+                  </View>
+                </View>
+              </BlurView>
             </View>
-          </BlurView>
+
+            {/* Page 2: Tunang Countdown */}
+            <View style={styles.cardPage}>
+              <BlurView
+                tint={isDark ? "dark" : "light"}
+                intensity={Platform.OS === "ios" ? 65 : 85}
+                style={[
+                  styles.countdownCard,
+                  {
+                    borderColor: isDark
+                      ? "rgba(255, 255, 255, 0.12)"
+                      : "rgba(0, 0, 0, 0.08)",
+                    backgroundColor: isDark
+                      ? "rgba(0, 0, 0, 0.45)"
+                      : "rgba(255, 255, 255, 0.65)",
+                  },
+                ]}
+              >
+                <ThemedText style={[styles.countdownHeader, { color: accentColor }]}>
+                  Tunang Countdown
+                </ThemedText>
+                <ThemedText style={[styles.coupleNames, { color: isDark ? "#ffffff" : "#1E1B4B" }]}>
+                  {coupleNames}
+                </ThemedText>
+                <ThemedText style={[styles.dateText, { color: accentColor }]}>
+                  {formatDateString(new Date(engagement.date))}
+                </ThemedText>
+
+                <View style={styles.timerContainer}>
+                  {/* Days */}
+                  <View style={styles.timeBlock}>
+                    <ThemedText style={[styles.timeNumber, { color: accentColor }]}>
+                      {formatNumber(engagementTimeLeft.days)}
+                    </ThemedText>
+                    <ThemedText style={[styles.timeLabel, { color: isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)" }]}>
+                      Days
+                    </ThemedText>
+                  </View>
+
+                  <View style={[styles.divider, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.1)" }]} />
+
+                  {/* Hours */}
+                  <View style={styles.timeBlock}>
+                    <ThemedText style={[styles.timeNumber, { color: accentColor }]}>
+                      {formatNumber(engagementTimeLeft.hours)}
+                    </ThemedText>
+                    <ThemedText style={[styles.timeLabel, { color: isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)" }]}>
+                      Hours
+                    </ThemedText>
+                  </View>
+
+                  <View style={[styles.divider, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.1)" }]} />
+
+                  {/* Minutes */}
+                  <View style={styles.timeBlock}>
+                    <ThemedText style={[styles.timeNumber, { color: accentColor }]}>
+                      {formatNumber(engagementTimeLeft.minutes)}
+                    </ThemedText>
+                    <ThemedText style={[styles.timeLabel, { color: isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)" }]}>
+                      Mins
+                    </ThemedText>
+                  </View>
+
+                  <View style={[styles.divider, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.1)" }]} />
+
+                  {/* Seconds */}
+                  <View style={styles.timeBlock}>
+                    <ThemedText style={[styles.timeNumber, { color: accentColor }]}>
+                      {formatNumber(engagementTimeLeft.seconds)}
+                    </ThemedText>
+                    <ThemedText style={[styles.timeLabel, { color: isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)" }]}>
+                      Secs
+                    </ThemedText>
+                  </View>
+                </View>
+              </BlurView>
+            </View>
+          </ScrollView>
+        </View>
+
+        {/* Pagination Dots */}
+        <View style={styles.dotsContainer}>
+          <View
+            style={[
+              styles.dot,
+              {
+                backgroundColor: activeEvent === 'marriage' ? accentColor : (isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(0, 0, 0, 0.15)'),
+                width: activeEvent === 'marriage' ? 16 : 6,
+              }
+            ]}
+          />
+          <View
+            style={[
+              styles.dot,
+              {
+                backgroundColor: activeEvent === 'engagement' ? accentColor : (isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(0, 0, 0, 0.15)'),
+                width: activeEvent === 'engagement' ? 16 : 6,
+              }
+            ]}
+          />
         </View>
 
         {/* Extra Premium Content Cards (allows scrolling to test fade out) */}
@@ -320,7 +404,7 @@ export default function MainScreen() {
                 },
               ]}
             >
-              Wedding Event
+              {activeEvent === 'marriage' ? 'Wedding Event' : 'Engagement Event'}
             </ThemedText>
             <ThemedText
               style={[
@@ -328,7 +412,7 @@ export default function MainScreen() {
                 { color: isDark ? "#ffffff" : "#4C1D95" },
               ]}
             >
-              De&apos;Emerald Garden, Banting
+              {activeDetails.venue}
             </ThemedText>
             <ThemedText
               style={[
@@ -336,7 +420,7 @@ export default function MainScreen() {
                 { color: isDark ? "#A78BFA" : "#7C3AED" },
               ]}
             >
-              Sunday, 8 August 2027 at 11:00 AM
+              {formatDateString(new Date(activeDetails.date))} at {activeDetails.time}
             </ThemedText>
           </BlurView>
 
@@ -582,5 +666,28 @@ const styles = StyleSheet.create({
   pinkBlob: {
     top: height * 0.62,
     right: -100,
+  },
+  horizontalScrollWrapper: {
+    width: "100%",
+  },
+  horizontalScrollContent: {
+    alignItems: "center",
+  },
+  cardPage: {
+    width: Dimensions.get("window").width,
+    paddingHorizontal: 24,
+    alignItems: "center",
+  },
+  dotsContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  dot: {
+    height: 6,
+    borderRadius: 3,
   },
 });

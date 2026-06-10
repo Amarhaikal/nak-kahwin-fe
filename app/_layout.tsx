@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 import { useColorScheme, CustomThemeProvider } from '@/hooks/use-color-scheme';
+import { WeddingDetailsProvider } from '@/hooks/use-wedding-details';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -43,7 +44,9 @@ function InnerLayout() {
 export default function RootLayout() {
   return (
     <CustomThemeProvider>
-      <InnerLayout />
+      <WeddingDetailsProvider>
+        <InnerLayout />
+      </WeddingDetailsProvider>
     </CustomThemeProvider>
   );
 }
