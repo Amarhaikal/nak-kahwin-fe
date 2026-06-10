@@ -116,29 +116,21 @@ export default function BudgetScreen() {
             backgroundColor: isDarkMode ? '#1E1E1E' : '#ffffff',
             borderColor: isDarkMode ? '#2D3748' : '#E2E8F0',
           }]}>
-            <View style={styles.totalBudgetWrapper}>
-              <View style={styles.titleArea}>
-                <ThemedText style={styles.summaryLabel}>TOTAL BUDGET LIMIT</ThemedText>
-                <View style={styles.limitDisplayRow}>
-                  <ThemedText style={[styles.limitValueText, { color: isDarkMode ? '#FFFFFF' : '#1E1B4B' }]}>
-                    {formatCurrency(budget.total)}
-                  </ThemedText>
-                  <Pressable onPress={handleStartEditTotal} style={styles.editIconButton}>
-                    <IconSymbol name="pencil" size={14} color={accentColor} />
-                  </Pressable>
-                </View>
-              </View>
-              
-              <View style={[
-                styles.statusPill,
-                { backgroundColor: remainingBudget < 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', marginTop: 0 }
-              ]}>
-                <ThemedText style={[
-                  styles.statusPillText,
-                  { color: remainingBudget < 0 ? '#EF4444' : '#10B981' }
-                ]}>
-                  {remainingBudget >= 0 ? `${formatCurrency(remainingBudget)} left` : `${formatCurrency(Math.abs(remainingBudget))} over-budget`}
+            <View style={styles.titleArea}>
+              <ThemedText style={styles.summaryLabel}>TOTAL BUDGET LIMIT</ThemedText>
+              <View style={styles.limitDisplayRow}>
+                <ThemedText style={[styles.limitValueText, { color: isDarkMode ? '#FFFFFF' : '#1E1B4B' }]}>
+                  {formatCurrency(budget.total)}
                 </ThemedText>
+                <Pressable 
+                  onPress={handleStartEditTotal} 
+                  style={({ pressed }) => [
+                    styles.editIconButton,
+                    { opacity: pressed ? 0.6 : 1 }
+                  ]}
+                >
+                  <IconSymbol name="pencil" size={18} color={accentColor} />
+                </Pressable>
               </View>
             </View>
           </View>
