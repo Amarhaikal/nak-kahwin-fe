@@ -65,20 +65,24 @@ export function WeddingDetailsProvider({ children }: { children: React.ReactNode
   });
 
   const [budget, setBudget] = useState<BudgetDetails>({
-    total: 30000,
-    place: { allocated: 10000, spent: 8500 },
-    catering: { allocated: 12000, spent: 11000 },
-    clothes: { allocated: 4000, spent: 3500 },
-    ring: { allocated: 2000, spent: 1800 },
-    others: { allocated: 2000, spent: 1200 },
+    total: 13500,
+    place: { allocated: 5000, spent: 0 },
+    catering: { allocated: 3000, spent: 0 },
+    clothes: { allocated: 1000, spent: 0 },
+    ring: { allocated: 1000, spent: 0 },
+    others: { allocated: 3500, spent: 0 },
   });
 
   const [savings, setSavings] = useState<SavingEntry[]>([
-    { id: '1', month: 'April 2026', amount: 1500, by: 'her' },
-    { id: '2', month: 'May 2026', amount: 800, by: 'her' },
-    { id: '3', month: 'May 2026', amount: 1200, by: 'him' },
-    { id: '4', month: 'June 2026', amount: 1000, by: 'her' },
-    { id: '5', month: 'June 2026', amount: 1500, by: 'him' },
+    { id: '1', month: 'June 2026', amount: 1200, by: 'him' },
+    { id: '2', month: 'June 2026', amount: 500, by: 'her' },
+    { id: '3', month: 'May 2026', amount: 800, by: 'him' },
+    { id: '4', month: 'May 2026', amount: 3000, by: 'her' },
+    { id: '5', month: 'April 2026', amount: 1000, by: 'him' },
+    { id: '6', month: 'February 2026', amount: 1000, by: 'him' },
+    { id: '7', month: 'January 2026', amount: 1000, by: 'him' },
+    { id: '8', month: 'December 2025', amount: 1000, by: 'him' },
+    { id: '9', month: 'November 2025', amount: 1000, by: 'him' },
   ]);
 
   const updateMarriage = (details: Partial<EventDetails>) => {
