@@ -1,98 +1,404 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { ThemedText } from "@/components/themed-text";
+import { BlurView } from "expo-blur";
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useEffect, useState } from "react";
+import { Dimensions, Platform, StyleSheet, View } from "react-native";
+import Animated, {
+  Extrapolation,
+  interpolate,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+const { height } = Dimensions.get("window");
 
-export default function HomeScreen() {
+// TARGET WEDDING DATE: August 8, 2027
+const TARGET_DATE = new Date("2027-08-08T11:00:00");
+
+export default function MainScreen() {
+  const accentColor = "#A78BFA"; // Lavender purple accent
+
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
+
+  // Reanimated scroll value
+  const scrollY = useSharedValue(0);
+
+  const scrollHandler = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+  });
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const difference = TARGET_DATE.getTime() - new Date().getTime();
+      if (difference <= 0) {
+        return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+      }
+      return {
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((difference / 1000 / 60) % 60),
+        seconds: Math.floor((difference / 1000) % 60),
+      };
+    };
+
+    // Calculate immediately
+    setTimeLeft(calculateTimeLeft());
+
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatNumber = (num: number) => {
+    return num.toString().padStart(2, "0");
+  };
+
+  const formatDateString = (date: Date) => {
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    };
+    return date.toLocaleDateString("en-US", options);
+  };
+
+  const imageHeight = height * 0.7;
+
+  // Background Image Animated Styles
+  const animatedBackgroundStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      scrollY.value,
+      [0, height * 0.45],
+      [1, 0],
+      Extrapolation.CLAMP,
+    );
+
+    const scale = interpolate(
+      scrollY.value,
+      [-100, 0, height * 0.45],
+      [1.1, 1, 0.95],
+      Extrapolation.CLAMP,
+    );
+
+    const translateY = interpolate(
+      scrollY.value,
+      [0, height * 0.45],
+      [0, -40],
+      Extrapolation.CLAMP,
+    );
+
+    return {
+      opacity,
+      transform: [{ scale }, { translateY }],
+    };
+  });
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
+    <View style={styles.container}>
+      {/* 70% Height Animated Image Header with Gradient Fade */}
+      <Animated.View
+        style={[
+          styles.imageContainer,
+          { height: imageHeight },
+          animatedBackgroundStyle,
+        ]}
+      >
         <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+          source={require("@/assets/images/background-2.jpg")}
+          style={styles.heroImage}
+          contentFit="cover"
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+        {/* Fade to Black at the bottom */}
+        <LinearGradient
+          colors={["transparent", "rgba(0,0,0,0.5)", "#000000"]}
+          style={styles.gradient}
+        />
+      </Animated.View>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      {/* Background Glowing Waves/Blobs (Blue & Pink) */}
+      <View style={styles.glowContainer} pointerEvents="none">
+        {/* Blue Glow Blob */}
+        <LinearGradient
+          colors={["rgba(59, 130, 246, 0.18)", "rgba(59, 130, 246, 0)"]}
+          start={{ x: 0.2, y: 0.2 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.glowBlob, styles.blueBlob]}
+        />
+        {/* Pink Glow Blob */}
+        <LinearGradient
+          colors={["rgba(236, 72, 153, 0.18)", "rgba(236, 72, 153, 0)"]}
+          start={{ x: 0.2, y: 0.2 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.glowBlob, styles.pinkBlob]}
+        />
+      </View>
+
+      {/* Scrollable Content overlaying background */}
+      <Animated.ScrollView
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Top Spacer to push everything below the fold except the countdown card */}
+        <View style={{ height: height - 300 }} />
+
+        {/* Glassmorphic Countdown Card */}
+        <View style={styles.cardWrapper}>
+          <BlurView
+            tint="dark"
+            intensity={Platform.OS === "ios" ? 65 : 85}
+            style={styles.countdownCard}
+          >
+            <ThemedText style={styles.countdownHeader}>
+              Save the Date
+            </ThemedText>
+            <ThemedText style={[styles.dateText, { color: accentColor }]}>
+              {formatDateString(TARGET_DATE)}
+            </ThemedText>
+
+            <View style={styles.timerContainer}>
+              {/* Days */}
+              <View style={styles.timeBlock}>
+                <ThemedText style={[styles.timeNumber, { color: accentColor }]}>
+                  {formatNumber(timeLeft.days)}
+                </ThemedText>
+                <ThemedText style={styles.timeLabel}>Days</ThemedText>
+              </View>
+
+              <View style={styles.divider} />
+
+              {/* Hours */}
+              <View style={styles.timeBlock}>
+                <ThemedText style={[styles.timeNumber, { color: accentColor }]}>
+                  {formatNumber(timeLeft.hours)}
+                </ThemedText>
+                <ThemedText style={styles.timeLabel}>Hours</ThemedText>
+              </View>
+
+              <View style={styles.divider} />
+
+              {/* Minutes */}
+              <View style={styles.timeBlock}>
+                <ThemedText style={[styles.timeNumber, { color: accentColor }]}>
+                  {formatNumber(timeLeft.minutes)}
+                </ThemedText>
+                <ThemedText style={styles.timeLabel}>Mins</ThemedText>
+              </View>
+
+              <View style={styles.divider} />
+
+              {/* Seconds */}
+              <View style={styles.timeBlock}>
+                <ThemedText style={[styles.timeNumber, { color: accentColor }]}>
+                  {formatNumber(timeLeft.seconds)}
+                </ThemedText>
+                <ThemedText style={styles.timeLabel}>Secs</ThemedText>
+              </View>
+            </View>
+          </BlurView>
+        </View>
+
+        {/* Extra Premium Content Cards (allows scrolling to test fade out) */}
+        <View style={styles.extraContentContainer}>
+          <View style={styles.infoCard}>
+            <ThemedText style={styles.infoTitle}>Wedding Event</ThemedText>
+            <ThemedText style={styles.infoText}>
+              De&apos;Emerald Garden, Banting
+            </ThemedText>
+            <ThemedText style={styles.infoSubText}>
+              Sunday, 8 August 2027 at 11:00 AM
+            </ThemedText>
+          </View>
+
+          <View style={styles.infoCard}>
+            <ThemedText style={styles.infoTitle}>Checklist Status</ThemedText>
+            <ThemedText style={styles.infoText}>
+              18 out of 32 tasks completed
+            </ThemedText>
+            <View style={styles.progressBarBg}>
+              <View
+                style={[
+                  styles.progressBarFill,
+                  { width: "56%", backgroundColor: accentColor },
+                ]}
+              />
+            </View>
+          </View>
+
+          <View style={styles.infoCard}>
+            <ThemedText style={styles.infoTitle}>
+              RSVP Status Summary
+            </ThemedText>
+            <ThemedText style={styles.infoText}>
+              142 Guests Confirmed Attending
+            </ThemedText>
+            <ThemedText style={styles.infoSubText}>
+              300 Total Invited Guest List
+            </ThemedText>
+          </View>
+        </View>
+      </Animated.ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: "#000000",
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
+  imageContainer: {
+    width: "100%",
+    position: "absolute",
+    top: 0,
     left: 0,
-    position: 'absolute',
+    overflow: "hidden",
+  },
+  heroImage: {
+    width: "100%",
+    height: "100%",
+  },
+  gradient: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 180,
+  },
+  scrollContainer: {
+    paddingBottom: 140, // sit nicely above floating navigation bar
+  },
+  cardWrapper: {
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  countdownCard: {
+    width: "100%",
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
+    alignItems: "center",
+    overflow: "hidden",
+  },
+  countdownHeader: {
+    fontSize: 14,
+    fontWeight: "bold",
+    textTransform: "uppercase",
+    letterSpacing: 3,
+    marginBottom: 6,
+    color: "#ffffff",
+  },
+  dateText: {
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 24,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  timerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  timeBlock: {
+    flex: 1,
+    alignItems: "center",
+  },
+  timeNumber: {
+    fontSize: 32,
+    fontWeight: "bold",
+    lineHeight: 40, // Fix top/bottom clipping on iOS/Android
+    fontVariant: ["tabular-nums"],
+  },
+  timeLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginTop: 4,
+    color: "rgba(255, 255, 255, 0.5)",
+  },
+  divider: {
+    width: 1,
+    height: 32,
+    backgroundColor: "rgba(255, 255, 255, 0.12)",
+  },
+  extraContentContainer: {
+    paddingHorizontal: 24,
+    marginTop: 24,
+    gap: 16,
+  },
+  infoCard: {
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(255,255,255,0.03)",
+  },
+  infoTitle: {
+    fontSize: 12,
+    fontWeight: "bold",
+    textTransform: "uppercase",
+    letterSpacing: 1.5,
+    color: "rgba(255,255,255,0.4)",
+    marginBottom: 6,
+  },
+  infoText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#ffffff",
+  },
+  infoSubText: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.5)",
+    marginTop: 4,
+  },
+  progressBarBg: {
+    height: 6,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderRadius: 3,
+    marginTop: 12,
+    overflow: "hidden",
+  },
+  progressBarFill: {
+    height: "100%",
+    borderRadius: 3,
+  },
+  glowContainer: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: "hidden",
+  },
+  glowBlob: {
+    position: "absolute",
+    width: 350,
+    height: 350,
+    borderRadius: 175,
+  },
+  blueBlob: {
+    top: height * 0.45,
+    left: -100,
+  },
+  pinkBlob: {
+    top: height * 0.62,
+    right: -100,
   },
 });
