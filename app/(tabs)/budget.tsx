@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 12,
     borderWidth: 1,
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 8,
     alignItems: 'center',
   },
@@ -480,7 +480,7 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: 'bold',
     letterSpacing: 0.5,
-    marginBottom: 4,
+    marginBottom: 1,
   },
   microCardVal: {
     fontSize: 13,
