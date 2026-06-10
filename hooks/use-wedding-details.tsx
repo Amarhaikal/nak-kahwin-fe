@@ -8,6 +8,27 @@ export interface EventDetails {
   time: string;
 }
 
+export interface BudgetItem {
+  allocated: number;
+  spent: number;
+}
+
+export interface BudgetDetails {
+  total: number;
+  place: BudgetItem;
+  catering: BudgetItem;
+  clothes: BudgetItem;
+  ring: BudgetItem;
+  others: BudgetItem;
+}
+
+export interface SavingEntry {
+  id: string;
+  month: string;
+  amount: number;
+  by: 'him' | 'her'; // 'him' = Groom (user, editable), 'her' = Bride (partner, read-only)
+}
+
 interface WeddingDetailsContextType {
   activeEvent: EventType;
   setActiveEvent: (type: EventType) => void;
@@ -17,6 +38,12 @@ interface WeddingDetailsContextType {
   updateEngagement: (details: Partial<EventDetails>) => void;
   coupleNames: string;
   updateCoupleNames: (names: string) => void;
+  budget: BudgetDetails;
+  updateBudgetCategory: (category: keyof Omit<BudgetDetails, 'total'>, details: Partial<BudgetItem>) => void;
+  updateTotalBudgetLimit: (total: number) => void;
+  savings: SavingEntry[];
+  addSaving: (month: string, amount: number) => void;
+  deleteSaving: (id: string) => void;
 }
 
 const WeddingDetailsContext = createContext<WeddingDetailsContextType | null>(null);
@@ -37,6 +64,23 @@ export function WeddingDetailsProvider({ children }: { children: React.ReactNode
     time: "3:00 PM",
   });
 
+  const [budget, setBudget] = useState<BudgetDetails>({
+    total: 30000,
+    place: { allocated: 10000, spent: 8500 },
+    catering: { allocated: 12000, spent: 11000 },
+    clothes: { allocated: 4000, spent: 3500 },
+    ring: { allocated: 2000, spent: 1800 },
+    others: { allocated: 2000, spent: 1200 },
+  });
+
+  const [savings, setSavings] = useState<SavingEntry[]>([
+    { id: '1', month: 'April 2026', amount: 1500, by: 'her' },
+    { id: '2', month: 'May 2026', amount: 800, by: 'her' },
+    { id: '3', month: 'May 2026', amount: 1200, by: 'him' },
+    { id: '4', month: 'June 2026', amount: 1000, by: 'her' },
+    { id: '5', month: 'June 2026', amount: 1500, by: 'him' },
+  ]);
+
   const updateMarriage = (details: Partial<EventDetails>) => {
     setMarriage(prev => ({ ...prev, ...details }));
   };
@@ -49,6 +93,37 @@ export function WeddingDetailsProvider({ children }: { children: React.ReactNode
     setCoupleNames(names);
   };
 
+  const updateBudgetCategory = (category: keyof Omit<BudgetDetails, 'total'>, details: Partial<BudgetItem>) => {
+    setBudget(prev => ({
+      ...prev,
+      [category]: {
+        ...prev[category],
+        ...details,
+      }
+    }));
+  };
+
+  const updateTotalBudgetLimit = (total: number) => {
+    setBudget(prev => ({
+      ...prev,
+      total,
+    }));
+  };
+
+  const addSaving = (month: string, amount: number) => {
+    const newSaving: SavingEntry = {
+      id: Date.now().toString(),
+      month,
+      amount,
+      by: 'him', // Default to Groom (him) bcs the logged in user is the groom
+    };
+    setSavings(prev => [newSaving, ...prev]);
+  };
+
+  const deleteSaving = (id: string) => {
+    setSavings(prev => prev.filter(saving => saving.id !== id));
+  };
+
   return (
     <WeddingDetailsContext.Provider value={{
       activeEvent,
@@ -59,6 +134,12 @@ export function WeddingDetailsProvider({ children }: { children: React.ReactNode
       updateEngagement,
       coupleNames,
       updateCoupleNames,
+      budget,
+      updateBudgetCategory,
+      updateTotalBudgetLimit,
+      savings,
+      addSaving,
+      deleteSaving,
     }}>
       {children}
     </WeddingDetailsContext.Provider>

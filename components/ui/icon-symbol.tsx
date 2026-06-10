@@ -27,6 +27,14 @@ const MAPPING = {
   'paintpalette.fill': 'palette',
   'moon.fill': 'nights-stay',
   'sun.max.fill': 'brightness-5',
+  'creditcard.fill': 'credit-card',
+  'dollarsign.circle.fill': 'attach-money',
+  'pencil.and.outline': 'edit',
+  'chart.bar.fill': 'bar-chart',
+  'fork.knife': 'restaurant',
+  'hanger': 'checkroom',
+  'gift.fill': 'card-giftcard',
+  'lock.fill': 'lock',
 } as IconMapping;
 
 /**
