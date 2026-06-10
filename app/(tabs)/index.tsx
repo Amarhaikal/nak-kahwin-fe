@@ -110,7 +110,7 @@ export default function MainScreen() {
     <View
       style={[
         styles.container,
-        { backgroundColor: isDark ? "#000000" : "#F1F5F9" },
+        { backgroundColor: isDark ? "#121212" : "#F1F5F9" },
       ]}
     >
       {/* 70% Height Animated Image Header with Gradient Fade */}
@@ -130,32 +130,14 @@ export default function MainScreen() {
         <LinearGradient
           colors={
             isDark
-              ? ["transparent", "rgba(0,0,0,0.5)", "#000000"]
+              ? ["transparent", "rgba(18,18,18,0.5)", "#121212"]
               : ["transparent", "rgba(241,245,249,0.6)", "#F1F5F9"]
           }
           style={styles.gradient}
         />
       </Animated.View>
 
-      {/* Background Glowing Waves/Blobs (Blue & Pink) - only visible in dark mode for aesthetic glow */}
-      {isDark && (
-        <View style={styles.glowContainer} pointerEvents="none">
-          {/* Blue Glow Blob */}
-          <LinearGradient
-            colors={["rgba(59, 130, 246, 0.18)", "rgba(59, 130, 246, 0)"]}
-            start={{ x: 0.2, y: 0.2 }}
-            end={{ x: 1, y: 1 }}
-            style={[styles.glowBlob, styles.blueBlob]}
-          />
-          {/* Pink Glow Blob */}
-          <LinearGradient
-            colors={["rgba(236, 72, 153, 0.18)", "rgba(236, 72, 153, 0)"]}
-            start={{ x: 0.2, y: 0.2 }}
-            end={{ x: 1, y: 1 }}
-            style={[styles.glowBlob, styles.pinkBlob]}
-          />
-        </View>
-      )}
+
 
       {/* Scrollable Content overlaying background */}
       <Animated.ScrollView
@@ -453,7 +435,7 @@ export default function MainScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: "#121212",
   },
   imageContainer: {
     width: "100%",
