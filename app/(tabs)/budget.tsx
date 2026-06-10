@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, ScrollView, TextInput, Platform, Dimensions, Pressable } from 'react-native';
+import { StyleSheet, View, ScrollView, TextInput, Platform, Dimensions, Pressable, Modal, KeyboardAvoidingView } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useWeddingDetails, BudgetItem, BudgetDetails } from '@/hooks/use-wedding-details';
 import { ThemedText } from '@/components/themed-text';
@@ -119,70 +119,92 @@ export default function BudgetScreen() {
             <View style={styles.totalBudgetWrapper}>
               <View style={styles.titleArea}>
                 <ThemedText style={styles.summaryLabel}>TOTAL BUDGET LIMIT</ThemedText>
-                
-                {isEditingTotal ? (
-                  <View style={[
-                    styles.statusPill,
-                    { backgroundColor: remainingBudget < 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)' }
-                  ]}>
-                    <ThemedText style={[
-                      styles.statusPillText,
-                      { color: remainingBudget < 0 ? '#EF4444' : '#10B981' }
-                    ]}>
-                      {remainingBudget >= 0 ? `${formatCurrency(remainingBudget)} left` : `${formatCurrency(Math.abs(remainingBudget))} over-budget`}
-                    </ThemedText>
-                  </View>
-                ) : (
-                  <View style={styles.limitDisplayRow}>
-                    <ThemedText style={[styles.limitValueText, { color: isDarkMode ? '#FFFFFF' : '#1E1B4B' }]}>
-                      {formatCurrency(budget.total)}
-                    </ThemedText>
-                    <Pressable onPress={handleStartEditTotal} style={styles.editIconButton}>
-                      <IconSymbol name="pencil" size={14} color={accentColor} />
-                    </Pressable>
-                  </View>
-                )}
-              </View>
-              
-              {isEditingTotal ? (
-                <View style={styles.editInputWrapper}>
-                  <View style={[styles.inputTotalContainer, {
-                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F1F5F9',
-                    borderColor: accentColor,
-                  }]}>
-                    <ThemedText style={[styles.currencyPrefix, { color: isDarkMode ? '#A0AEC0' : '#475569' }]}>RM</ThemedText>
-                    <TextInput
-                      style={[styles.totalTextInput, {
-                        color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
-                      }]}
-                      value={tempTotal}
-                      onChangeText={setTempTotal}
-                      keyboardType="numeric"
-                      autoFocus
-                      placeholder="0"
-                      placeholderTextColor={isDarkMode ? '#666666' : '#94A3B8'}
-                    />
-                  </View>
-                  <Pressable onPress={handleSaveTotal} style={[styles.saveIconButton, { backgroundColor: accentColor }]}>
-                    <IconSymbol name="checkmark" size={16} color="#FFFFFF" />
+                <View style={styles.limitDisplayRow}>
+                  <ThemedText style={[styles.limitValueText, { color: isDarkMode ? '#FFFFFF' : '#1E1B4B' }]}>
+                    {formatCurrency(budget.total)}
+                  </ThemedText>
+                  <Pressable onPress={handleStartEditTotal} style={styles.editIconButton}>
+                    <IconSymbol name="pencil" size={14} color={accentColor} />
                   </Pressable>
                 </View>
-              ) : (
-                <View style={[
-                  styles.statusPill,
-                  { backgroundColor: remainingBudget < 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', marginTop: 0 }
+              </View>
+              
+              <View style={[
+                styles.statusPill,
+                { backgroundColor: remainingBudget < 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', marginTop: 0 }
+              ]}>
+                <ThemedText style={[
+                  styles.statusPillText,
+                  { color: remainingBudget < 0 ? '#EF4444' : '#10B981' }
                 ]}>
-                  <ThemedText style={[
-                    styles.statusPillText,
-                    { color: remainingBudget < 0 ? '#EF4444' : '#10B981' }
-                  ]}>
-                    {remainingBudget >= 0 ? `${formatCurrency(remainingBudget)} left` : `${formatCurrency(Math.abs(remainingBudget))} over-budget`}
-                  </ThemedText>
-                </View>
-              )}
+                  {remainingBudget >= 0 ? `${formatCurrency(remainingBudget)} left` : `${formatCurrency(Math.abs(remainingBudget))} over-budget`}
+                </ThemedText>
+              </View>
             </View>
           </View>
         </View>
+
+        {/* Edit Budget Modal Popup */}
+        <Modal
+          visible={isEditingTotal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setIsEditingTotal(false)}
+        >
+          <Pressable 
+            style={styles.modalBackdrop} 
+            onPress={() => setIsEditingTotal(false)}
+          >
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              style={styles.modalContainer}
+            >
+              <Pressable 
+                style={[styles.modalCard, {
+                  backgroundColor: isDarkMode ? '#1E1E1E' : '#ffffff',
+                  borderColor: isDarkMode ? '#2D3748' : '#E2E8F0',
+                }]}
+                onPress={(e) => e.stopPropagation()}
+              >
+                <ThemedText style={styles.modalTitle}>Edit Total Budget</ThemedText>
+                <ThemedText style={styles.modalSub}>Set the maximum budget target for your wedding.</ThemedText>
+                
+                <View style={[styles.modalInputWrapper, {
+                  backgroundColor: isDarkMode ? '#2A2A2A' : '#F1F5F9',
+                  borderColor: isDarkMode ? '#3A3A3A' : '#CBD5E1',
+                }]}>
+                  <ThemedText style={[styles.modalCurrency, { color: isDarkMode ? '#A0AEC0' : '#475569' }]}>RM</ThemedText>
+                  <TextInput
+                    style={[styles.modalTextInput, {
+                      color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
+                    }]}
+                    value={tempTotal === '' ? '' : (parseInt(tempTotal.replace(/[^0-9]/g, '')) || 0).toLocaleString()}
+                    onChangeText={(text) => setTempTotal(text.replace(/[^0-9]/g, ''))}
+                    keyboardType="numeric"
+                    autoFocus
+                    placeholder="0"
+                    placeholderTextColor={isDarkMode ? '#666666' : '#94A3B8'}
+                  />
+                </View>
+
+                <View style={styles.modalButtonsRow}>
+                  <Pressable
+                    onPress={() => setIsEditingTotal(false)}
+                    style={[styles.modalButton, styles.cancelButton, { borderColor: isDarkMode ? '#3A3A3A' : '#E2E8F0' }]}
+                  >
+                    <ThemedText style={[styles.buttonText, { color: isDarkMode ? '#A0AEC0' : '#475569' }]}>Cancel</ThemedText>
+                  </Pressable>
+                  <Pressable
+                    onPress={handleSaveTotal}
+                    style={[styles.modalButton, styles.saveButton, { backgroundColor: accentColor }]}
+                  >
+                    <ThemedText style={[styles.buttonText, { color: '#FFFFFF', fontWeight: 'bold' }]}>Save</ThemedText>
+                  </Pressable>
+                </View>
+              </Pressable>
+            </KeyboardAvoidingView>
+          </Pressable>
+        </Modal>
 
         {/* Core summary dashboard */}
         <View style={[styles.dashboardContainer, { marginTop: 16 }]}>
@@ -619,5 +641,80 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 12,
     fontWeight: '500',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '90%',
+    maxWidth: 340,
+    alignItems: 'center',
+  },
+  modalCard: {
+    width: '100%',
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalSub: {
+    fontSize: 13,
+    opacity: 0.6,
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 18,
+  },
+  modalInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    height: 48,
+    width: '100%',
+    paddingHorizontal: 12,
+    marginBottom: 20,
+  },
+  modalCurrency: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginRight: 6,
+  },
+  modalTextInput: {
+    flex: 1,
+    height: '100%',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  modalButtonsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  modalButton: {
+    flex: 1,
+    height: 44,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cancelButton: {
+    borderWidth: 1,
+  },
+  saveButton: {},
+  buttonText: {
+    fontSize: 14,
   },
 });
