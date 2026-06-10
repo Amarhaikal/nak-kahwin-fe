@@ -110,12 +110,14 @@ export default function BudgetScreen() {
           </View>
         </LinearGradient>
 
-        {/* Total Budget Setting Card */}
+        {/* Core summary dashboard */}
         <View style={styles.dashboardContainer}>
           <View style={[styles.dashboardCard, {
             backgroundColor: isDarkMode ? '#1E1E1E' : '#ffffff',
             borderColor: isDarkMode ? '#2D3748' : '#E2E8F0',
           }]}>
+            
+            {/* Total Budget Limit Field */}
             <View style={styles.titleArea}>
               <ThemedText style={styles.summaryLabel}>TOTAL BUDGET LIMIT</ThemedText>
               <View style={styles.limitDisplayRow}>
@@ -133,6 +135,48 @@ export default function BudgetScreen() {
                 </Pressable>
               </View>
             </View>
+
+            <View style={styles.divider} />
+
+            {/* Overall Spent and Saved row */}
+            <View style={styles.totalsSummaryGrid}>
+              <View style={[styles.microCard, {
+                backgroundColor: isDarkMode ? 'rgba(245, 158, 11, 0.08)' : '#FEF3C7',
+                borderColor: isDarkMode ? 'rgba(245, 158, 11, 0.2)' : '#FDE68A',
+              }]}>
+                <ThemedText style={[styles.microCardLabel, { color: isDarkMode ? '#FBBF24' : '#D97706' }]}>SPENT</ThemedText>
+                <ThemedText style={[styles.microCardVal, { color: isDarkMode ? '#FFFFFF' : '#1E1B4B' }]}>
+                  {formatCurrency(totalSpent)}
+                </ThemedText>
+              </View>
+
+              <View style={[styles.microCard, {
+                backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.08)' : '#ECFDF5',
+                borderColor: isDarkMode ? 'rgba(16, 185, 129, 0.2)' : '#D1FAE5',
+              }]}>
+                <ThemedText style={[styles.microCardLabel, { color: '#10B981' }]}>SAVED (CASH)</ThemedText>
+                <ThemedText style={[styles.microCardVal, { color: isDarkMode ? '#FFFFFF' : '#1E1B4B' }]}>
+                  {formatCurrency(totalSavings)}
+                </ThemedText>
+              </View>
+            </View>
+
+            {/* Overall spent progress bar */}
+            <View style={styles.overallProgressWrapper}>
+              <View style={styles.progressBarLabelRow}>
+                <ThemedText style={styles.progressBarTitle}>Budget Spent Ratio</ThemedText>
+                <ThemedText style={[styles.progressBarPercent, { color: accentColor }]}>
+                  {overallProgressPercent.toFixed(0)}%
+                </ThemedText>
+              </View>
+              <View style={[styles.progressBarBg, { backgroundColor: isDarkMode ? '#2A2A2A' : '#E2E8F0' }]}>
+                <View style={[styles.progressBarFill, {
+                  width: `${Math.min(overallProgressPercent, 100)}%`,
+                  backgroundColor: overallProgressPercent > 100 ? '#EF4444' : accentColor,
+                }]} />
+              </View>
+            </View>
+
           </View>
         </View>
 
@@ -197,66 +241,6 @@ export default function BudgetScreen() {
             </KeyboardAvoidingView>
           </Pressable>
         </Modal>
-
-        {/* Core summary dashboard */}
-        <View style={[styles.dashboardContainer, { marginTop: 16 }]}>
-          <View style={[styles.dashboardCard, {
-            backgroundColor: isDarkMode ? '#1E1E1E' : '#ffffff',
-            borderColor: isDarkMode ? '#2D3748' : '#E2E8F0',
-          }]}>
-            
-            {/* Overall totals row - Styled as premium micro-cards */}
-            <View style={styles.totalsSummaryGrid}>
-              <View style={[styles.microCard, {
-                backgroundColor: isDarkMode ? 'rgba(124, 58, 237, 0.08)' : '#F5F3FF',
-                borderColor: isDarkMode ? 'rgba(124, 58, 237, 0.2)' : '#DDD6FE',
-              }]}>
-                <ThemedText style={[styles.microCardLabel, { color: isDarkMode ? '#A78BFA' : '#7C3AED' }]}>ALLOCATED</ThemedText>
-                <ThemedText style={[styles.microCardVal, { color: totalAllocated > budget.total ? '#F59E0B' : (isDarkMode ? '#FFFFFF' : '#1E1B4B') }]}>
-                  {formatCurrency(totalAllocated)}
-                </ThemedText>
-              </View>
-              
-              <View style={[styles.microCard, {
-                backgroundColor: isDarkMode ? 'rgba(99, 102, 241, 0.08)' : '#EEF2FF',
-                borderColor: isDarkMode ? 'rgba(99, 102, 241, 0.2)' : '#C7D2FE',
-              }]}>
-                <ThemedText style={[styles.microCardLabel, { color: isDarkMode ? '#818CF8' : '#4F46E5' }]}>SPENT</ThemedText>
-                <ThemedText style={[styles.microCardVal, { color: isDarkMode ? '#FFFFFF' : '#1E1B4B' }]}>
-                  {formatCurrency(totalSpent)}
-                </ThemedText>
-              </View>
-
-              <View style={[styles.microCard, {
-                backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.08)' : '#ECFDF5',
-                borderColor: isDarkMode ? 'rgba(16, 185, 129, 0.2)' : '#D1FAE5',
-              }]}>
-                <ThemedText style={[styles.microCardLabel, { color: '#10B981' }]}>SAVED (CASH)</ThemedText>
-                <ThemedText style={[styles.microCardVal, { color: isDarkMode ? '#FFFFFF' : '#1E1B4B' }]}>
-                  {formatCurrency(totalSavings)}
-                </ThemedText>
-              </View>
-            </View>
-
-            {/* Overall spent progress bar */}
-            <View style={styles.overallProgressWrapper}>
-              <View style={styles.progressBarLabelRow}>
-                <ThemedText style={styles.progressBarTitle}>Budget Spent Ratio</ThemedText>
-                <ThemedText style={[styles.progressBarPercent, { color: accentColor }]}>
-                  {overallProgressPercent.toFixed(0)}%
-                </ThemedText>
-              </View>
-              <View style={[styles.progressBarBg, { backgroundColor: isDarkMode ? '#2A2A2A' : '#E2E8F0' }]}>
-                <View style={[styles.progressBarFill, {
-                  width: `${Math.min(overallProgressPercent, 100)}%`,
-                  backgroundColor: overallProgressPercent > 100 ? '#EF4444' : accentColor,
-                }]} />
-              </View>
-            </View>
-
-
-          </View>
-        </View>
 
         {/* Budget Categories section */}
         <View style={styles.categoriesSection}>
