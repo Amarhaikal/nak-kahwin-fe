@@ -11,7 +11,7 @@ const tintColorDark = '#A78BFA';
 export const Colors = {
   light: {
     text: '#000000',
-    background: '#ffffff',
+    background: '#F1F5F9', // Soft slate-100 background for better light mode contrast
     tint: tintColorLight,
     icon: '#71717A',
     tabIconDefault: '#71717A',

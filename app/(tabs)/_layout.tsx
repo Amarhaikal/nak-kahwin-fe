@@ -32,7 +32,7 @@ export default function TabLayout() {
           right: 0,
           marginHorizontal: 24, // Inset 24px from both sides, centering it perfectly
           height: 68,
-          borderRadius: 34,
+          borderRadius: 26,
           paddingHorizontal: 12,
           overflow: "hidden",
           borderWidth: 1,
@@ -40,7 +40,10 @@ export default function TabLayout() {
             colorScheme === "dark"
               ? "rgba(255, 255, 255, 0.12)"
               : "rgba(0, 0, 0, 0.06)",
-          backgroundColor: "transparent",
+          backgroundColor:
+            colorScheme === "dark"
+              ? "transparent"
+              : "rgba(255, 255, 255, 0.85)",
           elevation: 0,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 10 },
@@ -66,6 +69,15 @@ export default function TabLayout() {
           title: "Checklist",
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="list.bullet" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="person.fill" color={color} />
           ),
         }}
       />

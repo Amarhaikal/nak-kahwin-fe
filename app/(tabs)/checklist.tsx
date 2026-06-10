@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, useColorScheme, ScrollView, Pressable, TextInput } from 'react-native';
+import { StyleSheet, View, ScrollView, Pressable, TextInput } from 'react-native';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 interface Task {
   id: string;
@@ -159,7 +160,7 @@ export default function ChecklistScreen() {
                   style={[
                     styles.categoryWrapper,
                     {
-                      backgroundColor: theme.background,
+                      backgroundColor: colorScheme === 'dark' ? theme.background : '#ffffff',
                       borderColor: colorScheme === 'light' ? '#E2E8F0' : '#2D3748',
                     }
                   ]}>
@@ -203,7 +204,7 @@ export default function ChecklistScreen() {
                             style={({ pressed }) => [
                               styles.taskItem,
                               {
-                                backgroundColor: theme.background,
+                                backgroundColor: colorScheme === 'dark' ? theme.background : '#ffffff',
                                 opacity: pressed ? 0.85 : 1
                               }
                             ]}>

@@ -23,6 +23,10 @@ const MAPPING = {
   'person.fill': 'person',
   'plus': 'add',
   'trash.fill': 'delete',
+  'gearshape.fill': 'settings',
+  'paintpalette.fill': 'palette',
+  'moon.fill': 'nights-stay',
+  'sun.max.fill': 'brightness-5',
 } as IconMapping;
 
 /**
