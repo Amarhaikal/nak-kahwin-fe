@@ -42,6 +42,7 @@ export default function BudgetScreen() {
   // State for total budget edit mode
   const [isEditingTotal, setIsEditingTotal] = useState(false);
   const [tempTotal, setTempTotal] = useState(String(budget.total));
+  const [editingCategoryKey, setEditingCategoryKey] = useState<string | null>(null);
 
   const handleStartEditTotal = () => {
     setTempTotal(String(budget.total));
@@ -278,44 +279,78 @@ export default function BudgetScreen() {
                   }]} />
                 </View>
 
-                {/* Categories editable numeric inputs */}
-                <View style={styles.inputsRow}>
-                  
-                  {/* Allocated Input */}
-                  <View style={styles.inputFieldBox}>
-                    <ThemedText style={styles.fieldLabel}>Allocated (RM)</ThemedText>
-                    <TextInput
-                      style={[styles.fieldTextInput, {
-                        backgroundColor: isDarkMode ? '#2A2A2A' : '#F8FAFC',
-                        color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
-                        borderColor: isDarkMode ? '#3A3A3A' : '#E2E8F0',
-                      }]}
-                      value={data.allocated === 0 ? '' : data.allocated.toLocaleString()}
-                      onChangeText={(text) => handleUpdateCategory(category.key, 'allocated', text)}
-                      keyboardType="numeric"
-                      placeholder="0"
-                      placeholderTextColor={isDarkMode ? '#555555' : '#94A3B8'}
-                    />
-                  </View>
-                  
-                  {/* Spent Input */}
-                  <View style={styles.inputFieldBox}>
-                    <ThemedText style={styles.fieldLabel}>Spent (RM)</ThemedText>
-                    <TextInput
-                      style={[styles.fieldTextInput, {
-                        backgroundColor: isDarkMode ? '#2A2A2A' : '#F8FAFC',
-                        color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
-                        borderColor: isDarkMode ? '#3A3A3A' : '#E2E8F0',
-                      }]}
-                      value={data.spent === 0 ? '' : data.spent.toLocaleString()}
-                      onChangeText={(text) => handleUpdateCategory(category.key, 'spent', text)}
-                      keyboardType="numeric"
-                      placeholder="0"
-                      placeholderTextColor={isDarkMode ? '#555555' : '#94A3B8'}
-                    />
-                  </View>
+                {/* Categories editable inputs (Form Mode) vs text summary (View Mode) */}
+                {editingCategoryKey === category.key ? (
+                  <View style={styles.inputsRow}>
+                    {/* Allocated Input */}
+                    <View style={styles.inputFieldBox}>
+                      <ThemedText style={styles.fieldLabel}>Allocated (RM)</ThemedText>
+                      <TextInput
+                        style={[styles.fieldTextInput, {
+                          backgroundColor: isDarkMode ? '#2A2A2A' : '#F8FAFC',
+                          color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
+                          borderColor: isDarkMode ? '#3A3A3A' : '#E2E8F0',
+                        }]}
+                        value={data.allocated === 0 ? '' : data.allocated.toLocaleString()}
+                        onChangeText={(text) => handleUpdateCategory(category.key, 'allocated', text)}
+                        keyboardType="numeric"
+                        autoFocus
+                        placeholder="0"
+                        placeholderTextColor={isDarkMode ? '#555555' : '#94A3B8'}
+                      />
+                    </View>
+                    
+                    {/* Spent Input */}
+                    <View style={styles.inputFieldBox}>
+                      <ThemedText style={styles.fieldLabel}>Spent (RM)</ThemedText>
+                      <TextInput
+                        style={[styles.fieldTextInput, {
+                          backgroundColor: isDarkMode ? '#2A2A2A' : '#F8FAFC',
+                          color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
+                          borderColor: isDarkMode ? '#3A3A3A' : '#E2E8F0',
+                        }]}
+                        value={data.spent === 0 ? '' : data.spent.toLocaleString()}
+                        onChangeText={(text) => handleUpdateCategory(category.key, 'spent', text)}
+                        keyboardType="numeric"
+                        placeholder="0"
+                        placeholderTextColor={isDarkMode ? '#555555' : '#94A3B8'}
+                      />
+                    </View>
 
-                </View>
+                    {/* Done Button */}
+                    <Pressable 
+                      onPress={() => setEditingCategoryKey(null)} 
+                      style={[styles.doneButton, { backgroundColor: accentColor }]}
+                    >
+                      <IconSymbol name="checkmark" size={16} color="#FFFFFF" />
+                    </Pressable>
+                  </View>
+                ) : (
+                  <View style={styles.viewRow}>
+                    <View style={styles.viewStatBox}>
+                      <ThemedText style={styles.viewStatLabel}>ALLOCATED</ThemedText>
+                      <ThemedText style={[styles.viewStatVal, { color: isDarkMode ? '#FFFFFF' : '#1E1B4B' }]}>
+                        {formatCurrency(data.allocated)}
+                      </ThemedText>
+                    </View>
+                    <View style={styles.viewStatDivider} />
+                    <View style={styles.viewStatBox}>
+                      <ThemedText style={styles.viewStatLabel}>SPENT</ThemedText>
+                      <ThemedText style={[styles.viewStatVal, { color: isOverspent ? '#EF4444' : (isDarkMode ? '#A78BFA' : '#7C3AED') }]}>
+                        {formatCurrency(data.spent)}
+                      </ThemedText>
+                    </View>
+                    <Pressable 
+                      onPress={() => setEditingCategoryKey(category.key)} 
+                      style={({ pressed }) => [
+                        styles.categoryEditButton,
+                        { opacity: pressed ? 0.6 : 1 }
+                      ]}
+                    >
+                      <IconSymbol name="pencil" size={14} color={accentColor} />
+                    </Pressable>
+                  </View>
+                )}
 
               </View>
             );
@@ -590,7 +625,8 @@ const styles = StyleSheet.create({
   },
   inputsRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
+    alignItems: 'flex-end',
     width: '100%',
   },
   inputFieldBox: {
@@ -692,5 +728,46 @@ const styles = StyleSheet.create({
   saveButton: {},
   buttonText: {
     fontSize: 14,
+  },
+  viewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 4,
+  },
+  viewStatBox: {
+    flex: 1,
+  },
+  viewStatLabel: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    opacity: 0.5,
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  viewStatVal: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  viewStatDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    marginHorizontal: 12,
+  },
+  categoryEditButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  doneButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
