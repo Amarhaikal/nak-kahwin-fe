@@ -35,6 +35,8 @@ const MAPPING = {
   'hanger': 'checkroom',
   'gift.fill': 'card-giftcard',
   'lock.fill': 'lock',
+  'pencil': 'edit',
+  'checkmark': 'check',
 } as IconMapping;
 
 /**

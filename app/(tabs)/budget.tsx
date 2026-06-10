@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, View, ScrollView, TextInput, Platform, Dimensions, Pressable } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useWeddingDetails, BudgetItem, BudgetDetails } from '@/hooks/use-wedding-details';
@@ -38,6 +38,21 @@ export default function BudgetScreen() {
     coupleNames,
     savings
   } = useWeddingDetails();
+
+  // State for total budget edit mode
+  const [isEditingTotal, setIsEditingTotal] = useState(false);
+  const [tempTotal, setTempTotal] = useState(String(budget.total));
+
+  const handleStartEditTotal = () => {
+    setTempTotal(String(budget.total));
+    setIsEditingTotal(true);
+  };
+
+  const handleSaveTotal = () => {
+    const numericVal = parseInt(tempTotal.replace(/[^0-9]/g, '')) || 0;
+    updateTotalBudgetLimit(numericVal);
+    setIsEditingTotal(false);
+  };
 
   // Calculations
   const totalSpent = 
@@ -104,9 +119,58 @@ export default function BudgetScreen() {
             <View style={styles.totalBudgetWrapper}>
               <View style={styles.titleArea}>
                 <ThemedText style={styles.summaryLabel}>TOTAL BUDGET LIMIT</ThemedText>
+                
+                {isEditingTotal ? (
+                  <View style={[
+                    styles.statusPill,
+                    { backgroundColor: remainingBudget < 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)' }
+                  ]}>
+                    <ThemedText style={[
+                      styles.statusPillText,
+                      { color: remainingBudget < 0 ? '#EF4444' : '#10B981' }
+                    ]}>
+                      {remainingBudget >= 0 ? `${formatCurrency(remainingBudget)} left` : `${formatCurrency(Math.abs(remainingBudget))} over-budget`}
+                    </ThemedText>
+                  </View>
+                ) : (
+                  <View style={styles.limitDisplayRow}>
+                    <ThemedText style={[styles.limitValueText, { color: isDarkMode ? '#FFFFFF' : '#1E1B4B' }]}>
+                      {formatCurrency(budget.total)}
+                    </ThemedText>
+                    <Pressable onPress={handleStartEditTotal} style={styles.editIconButton}>
+                      <IconSymbol name="pencil" size={14} color={accentColor} />
+                    </Pressable>
+                  </View>
+                )}
+              </View>
+              
+              {isEditingTotal ? (
+                <View style={styles.editInputWrapper}>
+                  <View style={[styles.inputTotalContainer, {
+                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F1F5F9',
+                    borderColor: accentColor,
+                  }]}>
+                    <ThemedText style={[styles.currencyPrefix, { color: isDarkMode ? '#A0AEC0' : '#475569' }]}>RM</ThemedText>
+                    <TextInput
+                      style={[styles.totalTextInput, {
+                        color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
+                      }]}
+                      value={tempTotal}
+                      onChangeText={setTempTotal}
+                      keyboardType="numeric"
+                      autoFocus
+                      placeholder="0"
+                      placeholderTextColor={isDarkMode ? '#666666' : '#94A3B8'}
+                    />
+                  </View>
+                  <Pressable onPress={handleSaveTotal} style={[styles.saveIconButton, { backgroundColor: accentColor }]}>
+                    <IconSymbol name="checkmark" size={16} color="#FFFFFF" />
+                  </Pressable>
+                </View>
+              ) : (
                 <View style={[
                   styles.statusPill,
-                  { backgroundColor: remainingBudget < 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)' }
+                  { backgroundColor: remainingBudget < 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', marginTop: 0 }
                 ]}>
                   <ThemedText style={[
                     styles.statusPillText,
@@ -115,24 +179,7 @@ export default function BudgetScreen() {
                     {remainingBudget >= 0 ? `${formatCurrency(remainingBudget)} left` : `${formatCurrency(Math.abs(remainingBudget))} over-budget`}
                   </ThemedText>
                 </View>
-              </View>
-              
-              <View style={[styles.inputTotalContainer, {
-                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F1F5F9',
-                borderColor: isDarkMode ? '#3A3A3A' : '#CBD5E1',
-              }]}>
-                <ThemedText style={[styles.currencyPrefix, { color: isDarkMode ? '#A0AEC0' : '#475569' }]}>RM</ThemedText>
-                <TextInput
-                  style={[styles.totalTextInput, {
-                    color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
-                  }]}
-                  value={String(budget.total)}
-                  onChangeText={handleUpdateTotal}
-                  keyboardType="numeric"
-                  placeholder="0"
-                  placeholderTextColor={isDarkMode ? '#666666' : '#94A3B8'}
-                />
-              </View>
+              )}
             </View>
           </View>
         </View>
@@ -245,7 +292,7 @@ export default function BudgetScreen() {
                         color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
                         borderColor: isDarkMode ? '#3A3A3A' : '#E2E8F0',
                       }]}
-                      value={String(data.allocated)}
+                      value={data.allocated === 0 ? '' : data.allocated.toLocaleString()}
                       onChangeText={(text) => handleUpdateCategory(category.key, 'allocated', text)}
                       keyboardType="numeric"
                       placeholder="0"
@@ -262,7 +309,7 @@ export default function BudgetScreen() {
                         color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
                         borderColor: isDarkMode ? '#3A3A3A' : '#E2E8F0',
                       }]}
-                      value={String(data.spent)}
+                      value={data.spent === 0 ? '' : data.spent.toLocaleString()}
                       onChangeText={(text) => handleUpdateCategory(category.key, 'spent', text)}
                       keyboardType="numeric"
                       placeholder="0"
@@ -336,6 +383,33 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
+  },
+  limitDisplayRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 8,
+  },
+  limitValueText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  editIconButton: {
+    padding: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  editInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  saveIconButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   summaryLabel: {
     fontSize: 11,
