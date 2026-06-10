@@ -42,7 +42,9 @@ export default function BudgetScreen() {
   // State for total budget edit mode
   const [isEditingTotal, setIsEditingTotal] = useState(false);
   const [tempTotal, setTempTotal] = useState(String(budget.total));
-  const [editingCategoryKey, setEditingCategoryKey] = useState<string | null>(null);
+  const [editingCategoryKey, setEditingCategoryKey] = useState<keyof Omit<BudgetDetails, 'total'> | null>(null);
+  const [editingAllocated, setEditingAllocated] = useState('');
+  const [editingSpent, setEditingSpent] = useState('');
 
   const handleStartEditTotal = () => {
     setTempTotal(String(budget.total));
@@ -53,6 +55,22 @@ export default function BudgetScreen() {
     const numericVal = parseInt(tempTotal.replace(/[^0-9]/g, '')) || 0;
     updateTotalBudgetLimit(numericVal);
     setIsEditingTotal(false);
+  };
+
+  const handleStartCategoryEdit = (key: keyof Omit<BudgetDetails, 'total'>) => {
+    const data = budget[key];
+    setEditingCategoryKey(key);
+    setEditingAllocated(String(data.allocated));
+    setEditingSpent(String(data.spent));
+  };
+
+  const handleSaveCategoryEdit = () => {
+    if (editingCategoryKey) {
+      const allocatedVal = parseInt(editingAllocated) || 0;
+      const spentVal = parseInt(editingSpent) || 0;
+      updateBudgetCategory(editingCategoryKey, { allocated: allocatedVal, spent: spentVal });
+      setEditingCategoryKey(null);
+    }
   };
 
   // Calculations
@@ -258,99 +276,111 @@ export default function BudgetScreen() {
                 borderColor: isDarkMode ? '#2D3748' : '#E2E8F0',
               }]}>
                 
-                {/* Category Card Header */}
-                <View style={styles.categoryHeader}>
-                  <View style={styles.categoryHeaderLeft}>
-                    <View style={[styles.iconBox, { backgroundColor: isDarkMode ? 'rgba(167, 139, 250, 0.12)' : 'rgba(124, 58, 237, 0.08)' }]}>
-                      <IconSymbol name={category.icon} size={20} color={accentColor} />
-                    </View>
-                    <ThemedText style={styles.categoryCardTitle}>{category.title}</ThemedText>
-                  </View>
-                  <ThemedText style={[styles.categoryPercentText, { color: isOverspent ? '#EF4444' : accentColor }]}>
-                    {spentPercent.toFixed(0)}% spent
-                  </ThemedText>
-                </View>
-
-                {/* Category Progress Bar */}
-                <View style={[styles.categoryProgressBarBg, { backgroundColor: isDarkMode ? '#2A2A2A' : '#E2E8F0' }]}>
-                  <View style={[styles.categoryProgressBarFill, {
-                    width: `${Math.min(spentPercent, 100)}%`,
-                    backgroundColor: isOverspent ? '#EF4444' : accentColor,
-                  }]} />
-                </View>
-
-                {/* Categories editable inputs (Form Mode) vs text summary (View Mode) */}
-                {editingCategoryKey === category.key ? (
-                  <View style={styles.inputsRow}>
-                    {/* Allocated Input */}
-                    <View style={styles.inputFieldBox}>
-                      <ThemedText style={styles.fieldLabel}>Allocated (RM)</ThemedText>
-                      <TextInput
-                        style={[styles.fieldTextInput, {
-                          backgroundColor: isDarkMode ? '#2A2A2A' : '#F8FAFC',
-                          color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
-                          borderColor: isDarkMode ? '#3A3A3A' : '#E2E8F0',
-                        }]}
-                        value={data.allocated === 0 ? '' : data.allocated.toLocaleString()}
-                        onChangeText={(text) => handleUpdateCategory(category.key, 'allocated', text)}
-                        keyboardType="numeric"
-                        autoFocus
-                        placeholder="0"
-                        placeholderTextColor={isDarkMode ? '#555555' : '#94A3B8'}
-                      />
-                    </View>
-                    
-                    {/* Spent Input */}
-                    <View style={styles.inputFieldBox}>
-                      <ThemedText style={styles.fieldLabel}>Spent (RM)</ThemedText>
-                      <TextInput
-                        style={[styles.fieldTextInput, {
-                          backgroundColor: isDarkMode ? '#2A2A2A' : '#F8FAFC',
-                          color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
-                          borderColor: isDarkMode ? '#3A3A3A' : '#E2E8F0',
-                        }]}
-                        value={data.spent === 0 ? '' : data.spent.toLocaleString()}
-                        onChangeText={(text) => handleUpdateCategory(category.key, 'spent', text)}
-                        keyboardType="numeric"
-                        placeholder="0"
-                        placeholderTextColor={isDarkMode ? '#555555' : '#94A3B8'}
-                      />
-                    </View>
-
-                    {/* Done Button */}
-                    <Pressable 
-                      onPress={() => setEditingCategoryKey(null)} 
-                      style={[styles.doneButton, { backgroundColor: accentColor }]}
-                    >
-                      <IconSymbol name="checkmark" size={16} color="#FFFFFF" />
-                    </Pressable>
-                  </View>
-                ) : (
-                  <View style={styles.viewRow}>
-                    <View style={styles.viewStatBox}>
-                      <ThemedText style={styles.viewStatLabel}>ALLOCATED</ThemedText>
-                      <ThemedText style={[styles.viewStatVal, { color: isDarkMode ? '#FFFFFF' : '#1E1B4B' }]}>
-                        {formatCurrency(data.allocated)}
-                      </ThemedText>
-                    </View>
-                    <View style={styles.viewStatDivider} />
-                    <View style={styles.viewStatBox}>
-                      <ThemedText style={styles.viewStatLabel}>SPENT</ThemedText>
-                      <ThemedText style={[styles.viewStatVal, { color: isOverspent ? '#EF4444' : (isDarkMode ? '#A78BFA' : '#7C3AED') }]}>
-                        {formatCurrency(data.spent)}
-                      </ThemedText>
-                    </View>
-                    <Pressable 
-                      onPress={() => setEditingCategoryKey(category.key)} 
-                      style={({ pressed }) => [
-                        styles.categoryEditButton,
-                        { opacity: pressed ? 0.6 : 1 }
-                      ]}
-                    >
-                      <IconSymbol name="pencil" size={14} color={accentColor} />
-                    </Pressable>
-                  </View>
-                )}
+                 {/* Category Card Header */}
+                 <View style={styles.categoryHeader}>
+                   <View style={styles.categoryHeaderLeft}>
+                     <View style={[styles.iconBox, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.12)' : 'rgba(16, 185, 129, 0.08)' }]}>
+                       <IconSymbol name={category.icon} size={20} color={accentColor} />
+                     </View>
+                     <ThemedText style={styles.categoryCardTitle}>{category.title}</ThemedText>
+                   </View>
+                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                     <ThemedText style={[styles.categoryPercentText, { color: isOverspent ? '#EF4444' : accentColor }]}>
+                       {spentPercent.toFixed(0)}% spent
+                     </ThemedText>
+                     {editingCategoryKey !== category.key && (
+                       <Pressable 
+                         onPress={() => handleStartCategoryEdit(category.key)} 
+                         style={({ pressed }) => [
+                           styles.headerEditButton,
+                           { opacity: pressed ? 0.6 : 1 }
+                         ]}
+                       >
+                         <IconSymbol name="pencil" size={14} color={accentColor} />
+                       </Pressable>
+                     )}
+                   </View>
+                 </View>
+ 
+                 {/* Category Progress Bar */}
+                 <View style={[styles.categoryProgressBarBg, { backgroundColor: isDarkMode ? '#2A2A2A' : '#E2E8F0' }]}>
+                   <View style={[styles.categoryProgressBarFill, {
+                     width: `${Math.min(spentPercent, 100)}%`,
+                     backgroundColor: isOverspent ? '#EF4444' : accentColor,
+                   }]} />
+                 </View>
+ 
+                 {/* Categories editable inputs (Form Mode) vs text summary (View Mode) */}
+                 {editingCategoryKey === category.key ? (
+                   <View style={styles.inputsRow}>
+                     {/* Budget Input */}
+                     <View style={styles.inputFieldBox}>
+                       <ThemedText style={styles.fieldLabel}>Budget (RM)</ThemedText>
+                       <TextInput
+                         style={[styles.fieldTextInput, {
+                           backgroundColor: isDarkMode ? '#2A2A2A' : '#F8FAFC',
+                           color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
+                           borderColor: isDarkMode ? '#3A3A3A' : '#E2E8F0',
+                         }]}
+                         value={editingAllocated === '' ? '' : (parseInt(editingAllocated) || 0).toLocaleString()}
+                         onChangeText={(text) => setEditingAllocated(text.replace(/[^0-9]/g, ''))}
+                         keyboardType="numeric"
+                         autoFocus
+                         placeholder="0"
+                         placeholderTextColor={isDarkMode ? '#555555' : '#94A3B8'}
+                       />
+                     </View>
+                     
+                     {/* Spent Input */}
+                     <View style={styles.inputFieldBox}>
+                       <ThemedText style={styles.fieldLabel}>Spent (RM)</ThemedText>
+                       <TextInput
+                         style={[styles.fieldTextInput, {
+                           backgroundColor: isDarkMode ? '#2A2A2A' : '#F8FAFC',
+                           color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
+                           borderColor: isDarkMode ? '#3A3A3A' : '#E2E8F0',
+                         }]}
+                         value={editingSpent === '' ? '' : (parseInt(editingSpent) || 0).toLocaleString()}
+                         onChangeText={(text) => setEditingSpent(text.replace(/[^0-9]/g, ''))}
+                         keyboardType="numeric"
+                         placeholder="0"
+                         placeholderTextColor={isDarkMode ? '#555555' : '#94A3B8'}
+                       />
+                     </View>
+ 
+                     {/* Save Button */}
+                     <Pressable 
+                       onPress={handleSaveCategoryEdit} 
+                       style={[styles.doneButton, { backgroundColor: accentColor }]}
+                     >
+                       <IconSymbol name="checkmark" size={14} color="#FFFFFF" />
+                     </Pressable>
+ 
+                     {/* Cancel Button */}
+                     <Pressable 
+                       onPress={() => setEditingCategoryKey(null)} 
+                       style={[styles.doneButton, { backgroundColor: isDarkMode ? '#333' : '#E2E8F0', marginLeft: 4 }]}
+                     >
+                       <IconSymbol name="xmark" size={14} color={isDarkMode ? '#AAA' : '#475569'} />
+                     </Pressable>
+                   </View>
+                 ) : (
+                   <View style={styles.viewRow}>
+                     <View style={styles.viewStatBox}>
+                       <ThemedText style={styles.viewStatLabel}>BUDGET</ThemedText>
+                       <ThemedText style={[styles.viewStatVal, { color: isDarkMode ? '#FFFFFF' : '#1E1B4B' }]}>
+                         {formatCurrency(data.allocated)}
+                       </ThemedText>
+                     </View>
+                     <View style={styles.viewStatDivider} />
+                     <View style={styles.viewStatBox}>
+                       <ThemedText style={styles.viewStatLabel}>SPENT</ThemedText>
+                       <ThemedText style={[styles.viewStatVal, { color: isOverspent ? '#EF4444' : (isDarkMode ? '#A78BFA' : '#7C3AED') }]}>
+                         {formatCurrency(data.spent)}
+                       </ThemedText>
+                     </View>
+                   </View>
+                 )}
 
               </View>
             );
@@ -756,10 +786,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.06)',
     marginHorizontal: 12,
   },
-  categoryEditButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  headerEditButton: {
+    padding: 4,
+    borderRadius: 6,
     justifyContent: 'center',
     alignItems: 'center',
   },

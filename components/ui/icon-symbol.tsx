@@ -37,6 +37,7 @@ const MAPPING = {
   'lock.fill': 'lock',
   'pencil': 'edit',
   'checkmark': 'check',
+  'xmark': 'close',
 } as IconMapping;
 
 /**
