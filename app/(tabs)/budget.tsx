@@ -60,7 +60,6 @@ export default function BudgetScreen() {
   const overallProgressPercent = budget.total > 0 ? (totalSpent / budget.total) * 100 : 0;
   const overallAllocatedPercent = budget.total > 0 ? (totalAllocated / budget.total) * 100 : 0;
   const savingProgressPercent = totalSpent > 0 ? (totalSavings / totalSpent) * 100 : 0;
-  const savingsNeeded = Math.max(0, totalSpent - totalSavings);
 
   const handleUpdateCategory = (
     categoryKey: keyof Omit<BudgetDetails, 'total'>,
@@ -194,33 +193,6 @@ export default function BudgetScreen() {
               </View>
             </View>
 
-            {/* Savings coverage ratio description */}
-            <View style={[styles.coverageBanner, {
-              backgroundColor: totalSpent === 0 
-                ? (isDarkMode ? 'rgba(16, 185, 129, 0.1)' : '#ECFDF5') 
-                : totalSavings >= totalSpent 
-                  ? (isDarkMode ? 'rgba(16, 185, 129, 0.1)' : '#ECFDF5')
-                  : (isDarkMode ? 'rgba(239, 68, 68, 0.1)' : '#FEF2FF'),
-              borderColor: totalSpent === 0 
-                ? (isDarkMode ? 'rgba(16, 185, 129, 0.2)' : '#A7F3D0') 
-                : totalSavings >= totalSpent 
-                  ? (isDarkMode ? 'rgba(16, 185, 129, 0.2)' : '#A7F3D0')
-                  : (isDarkMode ? 'rgba(239, 68, 68, 0.2)' : '#FCA5A5'),
-            }]}>
-              {totalSpent === 0 ? (
-                <ThemedText style={[styles.coverageText, { color: '#10B981' }]}>
-                  🎉 <ThemedText style={{ fontWeight: 'bold' }}>Perfect!</ThemedText> No expenses have been logged yet.
-                </ThemedText>
-              ) : totalSavings >= totalSpent ? (
-                <ThemedText style={[styles.coverageText, { color: '#10B981' }]}>
-                  💰 <ThemedText style={{ fontWeight: 'bold' }}>Fully Covered!</ThemedText> Savings cover all logged expenses ({formatCurrency(totalSavings)} saved vs {formatCurrency(totalSpent)} spent).
-                </ThemedText>
-              ) : (
-                <ThemedText style={[styles.coverageText, { color: '#EF4444' }]}>
-                  ⚠️ Savings cover only <ThemedText style={{ fontWeight: 'bold' }}>{savingProgressPercent.toFixed(0)}%</ThemedText> of logged expenses (need {formatCurrency(savingsNeeded)} more).
-                </ThemedText>
-              )}
-            </View>
 
           </View>
         </View>
