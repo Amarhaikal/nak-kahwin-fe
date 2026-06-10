@@ -279,7 +279,7 @@ export default function BudgetScreen() {
                  {/* Category Card Header */}
                  <View style={styles.categoryHeader}>
                    <View style={styles.categoryHeaderLeft}>
-                     <View style={[styles.iconBox, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.12)' : 'rgba(16, 185, 129, 0.08)' }]}>
+                     <View style={[styles.iconBox, { backgroundColor: isDarkMode ? 'rgba(167, 139, 250, 0.12)' : 'rgba(124, 58, 237, 0.08)' }]}>
                        <IconSymbol name={category.icon} size={20} color={accentColor} />
                      </View>
                      <ThemedText style={styles.categoryCardTitle}>{category.title}</ThemedText>
