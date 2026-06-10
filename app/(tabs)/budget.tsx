@@ -60,6 +60,7 @@ export default function BudgetScreen() {
   const overallProgressPercent = budget.total > 0 ? (totalSpent / budget.total) * 100 : 0;
   const overallAllocatedPercent = budget.total > 0 ? (totalAllocated / budget.total) * 100 : 0;
   const savingProgressPercent = totalSpent > 0 ? (totalSavings / totalSpent) * 100 : 0;
+  const savingsNeeded = Math.max(0, totalSpent - totalSavings);
 
   const handleUpdateCategory = (
     categoryKey: keyof Omit<BudgetDetails, 'total'>,
@@ -95,28 +96,36 @@ export default function BudgetScreen() {
           </View>
         </LinearGradient>
 
-        {/* Core summary dashboard */}
+        {/* Total Budget Setting Card */}
         <View style={styles.dashboardContainer}>
           <View style={[styles.dashboardCard, {
             backgroundColor: isDarkMode ? '#1E1E1E' : '#ffffff',
             borderColor: isDarkMode ? '#2D3748' : '#E2E8F0',
           }]}>
-            
-            {/* Total Budget Limit Field */}
             <View style={styles.totalBudgetWrapper}>
-              <View>
+              <View style={styles.titleArea}>
                 <ThemedText style={styles.summaryLabel}>TOTAL BUDGET LIMIT</ThemedText>
-                <ThemedText style={[styles.overallRemainingText, { color: remainingBudget < 0 ? '#EF4444' : '#10B981', fontSize: 13, marginTop: 2 }]}>
-                  {remainingBudget >= 0 ? `${formatCurrency(remainingBudget)} left` : `${formatCurrency(Math.abs(remainingBudget))} over-budget`}
-                </ThemedText>
+                <View style={[
+                  styles.statusPill,
+                  { backgroundColor: remainingBudget < 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)' }
+                ]}>
+                  <ThemedText style={[
+                    styles.statusPillText,
+                    { color: remainingBudget < 0 ? '#EF4444' : '#10B981' }
+                  ]}>
+                    {remainingBudget >= 0 ? `${formatCurrency(remainingBudget)} left` : `${formatCurrency(Math.abs(remainingBudget))} over-budget`}
+                  </ThemedText>
+                </View>
               </View>
-              <View style={styles.inputTotalContainer}>
-                <ThemedText style={[styles.currencyPrefix, { color: isDarkMode ? '#FFFFFF' : '#1E1B4B' }]}>RM</ThemedText>
+              
+              <View style={[styles.inputTotalContainer, {
+                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#F1F5F9',
+                borderColor: isDarkMode ? '#3A3A3A' : '#CBD5E1',
+              }]}>
+                <ThemedText style={[styles.currencyPrefix, { color: isDarkMode ? '#A0AEC0' : '#475569' }]}>RM</ThemedText>
                 <TextInput
                   style={[styles.totalTextInput, {
-                    backgroundColor: isDarkMode ? '#2A2A2A' : '#F1F5F9',
                     color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
-                    borderColor: isDarkMode ? '#3A3A3A' : '#CBD5E1',
                   }]}
                   value={String(budget.total)}
                   onChangeText={handleUpdateTotal}
@@ -126,32 +135,44 @@ export default function BudgetScreen() {
                 />
               </View>
             </View>
+          </View>
+        </View>
 
-            <View style={styles.divider} />
-
-            {/* Overall totals row */}
-            <View style={styles.totalsSummaryRow}>
-              <View style={styles.summaryBox}>
-                <ThemedText style={styles.summaryBoxLabel}>ALLOCATED</ThemedText>
-                <ThemedText style={[styles.summaryBoxVal, { color: totalAllocated > budget.total ? '#F59E0B' : (isDarkMode ? '#FFFFFF' : '#1E1B4B') }]}>
+        {/* Core summary dashboard */}
+        <View style={[styles.dashboardContainer, { marginTop: 16 }]}>
+          <View style={[styles.dashboardCard, {
+            backgroundColor: isDarkMode ? '#1E1E1E' : '#ffffff',
+            borderColor: isDarkMode ? '#2D3748' : '#E2E8F0',
+          }]}>
+            
+            {/* Overall totals row - Styled as premium micro-cards */}
+            <View style={styles.totalsSummaryGrid}>
+              <View style={[styles.microCard, {
+                backgroundColor: isDarkMode ? 'rgba(124, 58, 237, 0.08)' : '#F5F3FF',
+                borderColor: isDarkMode ? 'rgba(124, 58, 237, 0.2)' : '#DDD6FE',
+              }]}>
+                <ThemedText style={[styles.microCardLabel, { color: isDarkMode ? '#A78BFA' : '#7C3AED' }]}>ALLOCATED</ThemedText>
+                <ThemedText style={[styles.microCardVal, { color: totalAllocated > budget.total ? '#F59E0B' : (isDarkMode ? '#FFFFFF' : '#1E1B4B') }]}>
                   {formatCurrency(totalAllocated)}
                 </ThemedText>
               </View>
               
-              <View style={styles.summaryBoxDivider} />
-              
-              <View style={styles.summaryBox}>
-                <ThemedText style={styles.summaryBoxLabel}>SPENT</ThemedText>
-                <ThemedText style={[styles.summaryBoxVal, { color: accentColor }]}>
+              <View style={[styles.microCard, {
+                backgroundColor: isDarkMode ? 'rgba(99, 102, 241, 0.08)' : '#EEF2FF',
+                borderColor: isDarkMode ? 'rgba(99, 102, 241, 0.2)' : '#C7D2FE',
+              }]}>
+                <ThemedText style={[styles.microCardLabel, { color: isDarkMode ? '#818CF8' : '#4F46E5' }]}>SPENT</ThemedText>
+                <ThemedText style={[styles.microCardVal, { color: isDarkMode ? '#FFFFFF' : '#1E1B4B' }]}>
                   {formatCurrency(totalSpent)}
                 </ThemedText>
               </View>
 
-              <View style={styles.summaryBoxDivider} />
-
-              <View style={styles.summaryBox}>
-                <ThemedText style={styles.summaryBoxLabel}>SAVED (CASH)</ThemedText>
-                <ThemedText style={[styles.summaryBoxVal, { color: '#10B981' }]}>
+              <View style={[styles.microCard, {
+                backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.08)' : '#ECFDF5',
+                borderColor: isDarkMode ? 'rgba(16, 185, 129, 0.2)' : '#D1FAE5',
+              }]}>
+                <ThemedText style={[styles.microCardLabel, { color: '#10B981' }]}>SAVED (CASH)</ThemedText>
+                <ThemedText style={[styles.microCardVal, { color: isDarkMode ? '#FFFFFF' : '#1E1B4B' }]}>
                   {formatCurrency(totalSavings)}
                 </ThemedText>
               </View>
@@ -174,9 +195,32 @@ export default function BudgetScreen() {
             </View>
 
             {/* Savings coverage ratio description */}
-            <ThemedText style={[styles.savingsComparisonText, { color: isDarkMode ? '#A0AEC0' : '#475569' }]}>
-              💰 Savings cover <ThemedText style={{ fontWeight: 'bold', color: '#10B981' }}>{savingProgressPercent.toFixed(0)}%</ThemedText> of total spent so far.
-            </ThemedText>
+            <View style={[styles.coverageBanner, {
+              backgroundColor: totalSpent === 0 
+                ? (isDarkMode ? 'rgba(16, 185, 129, 0.1)' : '#ECFDF5') 
+                : totalSavings >= totalSpent 
+                  ? (isDarkMode ? 'rgba(16, 185, 129, 0.1)' : '#ECFDF5')
+                  : (isDarkMode ? 'rgba(239, 68, 68, 0.1)' : '#FEF2FF'),
+              borderColor: totalSpent === 0 
+                ? (isDarkMode ? 'rgba(16, 185, 129, 0.2)' : '#A7F3D0') 
+                : totalSavings >= totalSpent 
+                  ? (isDarkMode ? 'rgba(16, 185, 129, 0.2)' : '#A7F3D0')
+                  : (isDarkMode ? 'rgba(239, 68, 68, 0.2)' : '#FCA5A5'),
+            }]}>
+              {totalSpent === 0 ? (
+                <ThemedText style={[styles.coverageText, { color: '#10B981' }]}>
+                  🎉 <ThemedText style={{ fontWeight: 'bold' }}>Perfect!</ThemedText> No expenses have been logged yet.
+                </ThemedText>
+              ) : totalSavings >= totalSpent ? (
+                <ThemedText style={[styles.coverageText, { color: '#10B981' }]}>
+                  💰 <ThemedText style={{ fontWeight: 'bold' }}>Fully Covered!</ThemedText> Savings cover all logged expenses ({formatCurrency(totalSavings)} saved vs {formatCurrency(totalSpent)} spent).
+                </ThemedText>
+              ) : (
+                <ThemedText style={[styles.coverageText, { color: '#EF4444' }]}>
+                  ⚠️ Savings cover only <ThemedText style={{ fontWeight: 'bold' }}>{savingProgressPercent.toFixed(0)}%</ThemedText> of logged expenses (need {formatCurrency(savingsNeeded)} more).
+                </ThemedText>
+              )}
+            </View>
 
           </View>
         </View>
@@ -335,7 +379,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 12,
-    borderWidth: 0,
+    borderWidth: 1,
     height: 42,
     width: 140,
     overflow: 'hidden',
@@ -361,31 +405,55 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.05)',
     marginVertical: 16,
   },
-  totalsSummaryRow: {
+  titleArea: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  statusPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginTop: 4,
+  },
+  statusPillText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  totalsSummaryGrid: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 8,
     width: '100%',
   },
-  summaryBox: {
+  microCard: {
     flex: 1,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
     alignItems: 'center',
   },
-  summaryBoxLabel: {
+  microCardLabel: {
     fontSize: 9,
     fontWeight: 'bold',
-    letterSpacing: 0.8,
-    opacity: 0.5,
+    letterSpacing: 0.5,
     marginBottom: 4,
   },
-  summaryBoxVal: {
-    fontSize: 15,
+  microCardVal: {
+    fontSize: 13,
     fontWeight: 'bold',
   },
-  summaryBoxDivider: {
-    width: 1,
-    height: 30,
-    backgroundColor: 'rgba(0,0,0,0.06)',
+  coverageBanner: {
+    marginTop: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  coverageText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   overallProgressWrapper: {
     marginTop: 18,
