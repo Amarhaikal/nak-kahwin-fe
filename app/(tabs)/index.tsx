@@ -169,7 +169,7 @@ export default function MainScreen() {
             <ThemedText
               style={[
                 styles.countdownHeader,
-                { color: isDark ? "#ffffff" : "#1E1B4B" },
+                { color: accentColor },
               ]}
             >
               Save the Date
@@ -301,14 +301,14 @@ export default function MainScreen() {
 
         {/* Extra Premium Content Cards (allows scrolling to test fade out) */}
         <View style={styles.extraContentContainer}>
-          <View
+          <BlurView
+            tint={isDark ? "dark" : "light"}
+            intensity={Platform.OS === "ios" ? 45 : 75}
             style={[
               styles.infoCard,
               {
-                borderColor: isDark
-                  ? "rgba(255,255,255,0.08)"
-                  : "rgba(0,0,0,0.06)",
-                backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "#ffffff",
+                borderColor: isDark ? "rgba(167, 139, 250, 0.15)" : "rgba(124, 58, 237, 0.15)",
+                backgroundColor: isDark ? "rgba(42, 27, 61, 0.55)" : "rgba(237, 233, 254, 0.75)",
               },
             ]}
           >
@@ -316,7 +316,7 @@ export default function MainScreen() {
               style={[
                 styles.infoTitle,
                 {
-                  color: isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.45)",
+                  color: isDark ? "#C4B5FD" : "#6D28D9",
                 },
               ]}
             >
@@ -325,7 +325,7 @@ export default function MainScreen() {
             <ThemedText
               style={[
                 styles.infoText,
-                { color: isDark ? "#ffffff" : "#1E293B" },
+                { color: isDark ? "#ffffff" : "#4C1D95" },
               ]}
             >
               De&apos;Emerald Garden, Banting
@@ -333,21 +333,21 @@ export default function MainScreen() {
             <ThemedText
               style={[
                 styles.infoSubText,
-                { color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.6)" },
+                { color: isDark ? "#A78BFA" : "#7C3AED" },
               ]}
             >
               Sunday, 8 August 2027 at 11:00 AM
             </ThemedText>
-          </View>
+          </BlurView>
 
-          <View
+          <BlurView
+            tint={isDark ? "dark" : "light"}
+            intensity={Platform.OS === "ios" ? 45 : 75}
             style={[
               styles.infoCard,
               {
-                borderColor: isDark
-                  ? "rgba(255,255,255,0.08)"
-                  : "rgba(0,0,0,0.06)",
-                backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "#ffffff",
+                borderColor: isDark ? "rgba(167, 139, 250, 0.15)" : "rgba(124, 58, 237, 0.15)",
+                backgroundColor: isDark ? "rgba(42, 27, 61, 0.55)" : "rgba(237, 233, 254, 0.75)",
               },
             ]}
           >
@@ -355,7 +355,7 @@ export default function MainScreen() {
               style={[
                 styles.infoTitle,
                 {
-                  color: isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.45)",
+                  color: isDark ? "#C4B5FD" : "#6D28D9",
                 },
               ]}
             >
@@ -364,7 +364,7 @@ export default function MainScreen() {
             <ThemedText
               style={[
                 styles.infoText,
-                { color: isDark ? "#ffffff" : "#1E293B" },
+                { color: isDark ? "#ffffff" : "#4C1D95" },
               ]}
             >
               18 out of 32 tasks completed
@@ -373,29 +373,27 @@ export default function MainScreen() {
               style={[
                 styles.progressBarBg,
                 {
-                  backgroundColor: isDark
-                    ? "rgba(255,255,255,0.1)"
-                    : "rgba(0,0,0,0.08)",
+                  backgroundColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#DDD6FE",
                 },
               ]}
             >
               <View
                 style={[
                   styles.progressBarFill,
-                  { width: "56%", backgroundColor: accentColor },
+                  { width: "56%", backgroundColor: isDark ? "#A78BFA" : "#7C3AED" },
                 ]}
               />
             </View>
-          </View>
+          </BlurView>
 
-          <View
+          <BlurView
+            tint={isDark ? "dark" : "light"}
+            intensity={Platform.OS === "ios" ? 45 : 75}
             style={[
               styles.infoCard,
               {
-                borderColor: isDark
-                  ? "rgba(255,255,255,0.08)"
-                  : "rgba(0,0,0,0.06)",
-                backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "#ffffff",
+                borderColor: isDark ? "rgba(167, 139, 250, 0.15)" : "rgba(124, 58, 237, 0.15)",
+                backgroundColor: isDark ? "rgba(42, 27, 61, 0.55)" : "rgba(237, 233, 254, 0.75)",
               },
             ]}
           >
@@ -403,7 +401,7 @@ export default function MainScreen() {
               style={[
                 styles.infoTitle,
                 {
-                  color: isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.45)",
+                  color: isDark ? "#C4B5FD" : "#6D28D9",
                 },
               ]}
             >
@@ -412,7 +410,7 @@ export default function MainScreen() {
             <ThemedText
               style={[
                 styles.infoText,
-                { color: isDark ? "#ffffff" : "#1E293B" },
+                { color: isDark ? "#ffffff" : "#4C1D95" },
               ]}
             >
               142 Guests Confirmed Attending
@@ -420,12 +418,12 @@ export default function MainScreen() {
             <ThemedText
               style={[
                 styles.infoSubText,
-                { color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.6)" },
+                { color: isDark ? "#A78BFA" : "#7C3AED" },
               ]}
             >
               300 Total Invited Guest List
             </ThemedText>
-          </View>
+          </BlurView>
         </View>
       </Animated.ScrollView>
     </View>
@@ -483,10 +481,9 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 3,
     marginBottom: 6,
-    color: "#ffffff",
   },
   coupleNames: {
-    fontSize: 26,
+    fontSize: 25,
     fontWeight: "bold",
     letterSpacing: 0.5,
     marginVertical: 10,
@@ -537,8 +534,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    backgroundColor: "rgba(255,255,255,0.03)",
+    overflow: "hidden",
   },
   infoTitle: {
     fontSize: 12,
