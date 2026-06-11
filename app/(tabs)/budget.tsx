@@ -36,7 +36,9 @@ export default function BudgetScreen() {
     updateBudgetCategory, 
     updateTotalBudgetLimit, 
     coupleNames,
-    savings
+    savings,
+    activeEvent,
+    setActiveEvent
   } = useWeddingDetails();
 
   // State for total budget edit mode
@@ -45,6 +47,12 @@ export default function BudgetScreen() {
   const [editingCategoryKey, setEditingCategoryKey] = useState<keyof Omit<BudgetDetails, 'total'> | null>(null);
   const [editingAllocated, setEditingAllocated] = useState('');
   const [editingSpent, setEditingSpent] = useState('');
+
+  // Close active editing modes when event changes
+  React.useEffect(() => {
+    setIsEditingTotal(false);
+    setEditingCategoryKey(null);
+  }, [activeEvent]);
 
   const handleStartEditTotal = () => {
     setTempTotal(String(budget.total));
@@ -125,33 +133,86 @@ export default function BudgetScreen() {
           <View style={styles.bannerOverlay} />
           <View style={styles.headerContent}>
             <ThemedText style={styles.screenTitle}>Wedding Budget</ThemedText>
-            <ThemedText style={styles.screenSub}>{coupleNames}'s Finance Tracker</ThemedText>
+            <ThemedText style={styles.screenSub}>
+              {coupleNames}{`'s ${activeEvent === 'marriage' ? 'Nikah' : 'Tunang'} Finance Tracker`}
+            </ThemedText>
           </View>
         </LinearGradient>
 
         {/* Core summary dashboard */}
         <View style={styles.dashboardContainer}>
+          {/* Event Switcher Segmented Control */}
+          <View style={[styles.switcherContainer, { 
+            backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF',
+            borderColor: isDarkMode ? '#2D3748' : '#E2E8F0',
+          }]}>
+            <Pressable
+              onPress={() => setActiveEvent('marriage')}
+              style={[
+                styles.switcherTab,
+                activeEvent === 'marriage' && { backgroundColor: accentColor }
+              ]}
+            >
+              <ThemedText style={[
+                styles.switcherTabText,
+                { color: activeEvent === 'marriage' ? '#FFFFFF' : (isDarkMode ? '#A0AEC0' : '#475569') },
+                activeEvent === 'marriage' && { fontWeight: 'bold' }
+              ]}>
+                Marriage (Nikah)
+              </ThemedText>
+            </Pressable>
+            <Pressable
+              onPress={() => setActiveEvent('engagement')}
+              style={[
+                styles.switcherTab,
+                activeEvent === 'engagement' && { backgroundColor: accentColor }
+              ]}
+            >
+              <ThemedText style={[
+                styles.switcherTabText,
+                { color: activeEvent === 'engagement' ? '#FFFFFF' : (isDarkMode ? '#A0AEC0' : '#475569') },
+                activeEvent === 'engagement' && { fontWeight: 'bold' }
+              ]}>
+                Engagement (Tunang)
+              </ThemedText>
+            </Pressable>
+          </View>
+
           <View style={[styles.dashboardCard, {
             backgroundColor: isDarkMode ? '#1E1E1E' : '#ffffff',
             borderColor: isDarkMode ? '#2D3748' : '#E2E8F0',
           }]}>
             
-            {/* Total Budget Limit Field */}
-            <View style={styles.titleArea}>
-              <ThemedText style={styles.summaryLabel}>TOTAL BUDGET LIMIT</ThemedText>
-              <View style={styles.limitDisplayRow}>
-                <ThemedText style={[styles.limitValueText, { color: isDarkMode ? '#FFFFFF' : '#1E1B4B' }]}>
-                  {formatCurrency(budget.total)}
-                </ThemedText>
-                <Pressable 
-                  onPress={handleStartEditTotal} 
-                  style={({ pressed }) => [
-                    styles.editIconButton,
-                    { opacity: pressed ? 0.6 : 1 }
-                  ]}
-                >
-                  <IconSymbol name="pencil" size={18} color={accentColor} />
-                </Pressable>
+            {/* Total Budget Limit & Allocation Field */}
+            <View style={styles.totalBudgetWrapper}>
+              <View style={styles.titleArea}>
+                <ThemedText style={styles.summaryLabel}>TOTAL BUDGET LIMIT</ThemedText>
+                <View style={styles.limitDisplayRow}>
+                  <ThemedText style={[styles.limitValueText, { color: isDarkMode ? '#FFFFFF' : '#1E1B4B' }]}>
+                    {formatCurrency(budget.total)}
+                  </ThemedText>
+                  <Pressable 
+                    onPress={handleStartEditTotal} 
+                    style={({ pressed }) => [
+                      styles.editIconButton,
+                      { opacity: pressed ? 0.6 : 1 }
+                    ]}
+                  >
+                    <IconSymbol name="pencil" size={18} color={accentColor} />
+                  </Pressable>
+                </View>
+              </View>
+
+              <View style={[styles.titleArea, { alignItems: 'flex-end' }]}>
+                <ThemedText style={styles.summaryLabel}>TOTAL ALLOCATED</ThemedText>
+                <View style={styles.limitDisplayRow}>
+                  <ThemedText style={[
+                    styles.limitValueText, 
+                    { color: totalAllocated > budget.total ? '#EF4444' : (isDarkMode ? '#FFFFFF' : '#1E1B4B') }
+                  ]}>
+                    {formatCurrency(totalAllocated)}
+                  </ThemedText>
+                </View>
               </View>
             </View>
 
@@ -194,6 +255,34 @@ export default function BudgetScreen() {
                   backgroundColor: overallProgressPercent > 100 ? '#EF4444' : accentColor,
                 }]} />
               </View>
+            </View>
+
+            {/* Allocation Status / Coverage Banner */}
+            <View style={[styles.coverageBanner, {
+              backgroundColor: totalAllocated > budget.total 
+                ? (isDarkMode ? 'rgba(239, 68, 68, 0.08)' : '#FEF2F2')
+                : totalAllocated === budget.total 
+                  ? (isDarkMode ? 'rgba(16, 185, 129, 0.08)' : '#ECFDF5')
+                  : (isDarkMode ? 'rgba(124, 58, 237, 0.08)' : '#F5F3FF'),
+              borderColor: totalAllocated > budget.total 
+                ? (isDarkMode ? 'rgba(239, 68, 68, 0.2)' : '#FCA5A5')
+                : totalAllocated === budget.total 
+                  ? (isDarkMode ? 'rgba(16, 185, 129, 0.2)' : '#A7F3D0')
+                  : (isDarkMode ? 'rgba(124, 58, 237, 0.2)' : '#DDD6FE'),
+            }]}>
+              <ThemedText style={[styles.coverageText, {
+                color: totalAllocated > budget.total 
+                  ? '#EF4444'
+                  : totalAllocated === budget.total 
+                    ? '#10B981'
+                    : (isDarkMode ? '#A78BFA' : '#7C3AED'),
+              }]}>
+                {totalAllocated > budget.total 
+                  ? `Over-allocated by ${formatCurrency(totalAllocated - budget.total)}!`
+                  : totalAllocated === budget.total
+                    ? 'Budget fully allocated!'
+                    : `${formatCurrency(budget.total - totalAllocated)} left to allocate (${overallAllocatedPercent.toFixed(0)}% allocated)`}
+              </ThemedText>
             </View>
 
           </View>
@@ -798,5 +887,23 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  switcherContainer: {
+    flexDirection: 'row',
+    borderRadius: 14,
+    padding: 4,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  switcherTab: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+  },
+  switcherTabText: {
+    fontSize: 13,
+    fontWeight: '500',
   },
 });

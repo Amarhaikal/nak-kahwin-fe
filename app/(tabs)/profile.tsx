@@ -7,6 +7,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 
 // ISO string to YYYY-MM-DD
 const toLocalDateString = (isoString: string) => {
@@ -69,14 +70,13 @@ export default function ProfileScreen() {
           <View style={styles.bannerOverlay} />
           
           <View style={styles.profileHeader}>
-            <LinearGradient
-              colors={isDarkMode ? ['#A78BFA', '#7C3AED'] : ['#F3E8FF', '#E9D5FF']}
-              style={styles.avatarWrapper}
-            >
-              <ThemedText style={[styles.avatarText, { color: isDarkMode ? '#1E1B4B' : '#7C3AED' }]}>
-                AH
-              </ThemedText>
-            </LinearGradient>
+            <View style={styles.avatarWrapper}>
+              <Image
+                source={require("@/assets/images/Image.jpeg")}
+                style={styles.avatarImage}
+                contentFit="cover"
+              />
+            </View>
             
             <View style={styles.headerInfo}>
               <ThemedText style={styles.profileName}>Amar Haikal</ThemedText>
@@ -308,6 +308,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.25)',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
   avatarText: {
     fontSize: 20,
