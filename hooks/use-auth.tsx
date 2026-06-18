@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import { AppState, AppStateStatus } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { registerUser, loginUser, logoutUser, refreshUser, AuthResponse, RegisterPayload, LoginPayload } from "@/services/auth-service";
@@ -20,6 +20,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true); // true while we check stored token
+  const lastRefreshedAt = useRef<number>(0);
 
   // On app start — restore session from secure storage
   useEffect(() => {
@@ -34,6 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               await SecureStore.setItemAsync(TOKEN_KEY, data.accessToken);
               await SecureStore.setItemAsync(USER_KEY, JSON.stringify(data));
               setUser(data);
+              lastRefreshedAt.current = Date.now();
               return;
             } else if (error && (error.includes("expired") || error.includes("invalid"))) {
               // Refresh token has expired or is invalid -> log out
@@ -58,9 +60,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data, error } = await registerUser(payload);
     if (error || !data) return error ?? "Registration failed.";
 
-    await SecureStore.setItemAsync(TOKEN_KEY, data.accessToken);
-    await SecureStore.setItemAsync(USER_KEY, JSON.stringify(data));
-    setUser(data);
     return null; // null = success
   };
 
@@ -71,6 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await SecureStore.setItemAsync(TOKEN_KEY, data.accessToken);
     await SecureStore.setItemAsync(USER_KEY, JSON.stringify(data));
     setUser(data);
+    lastRefreshedAt.current = Date.now();
     return null; // null = success
   };
 
@@ -100,19 +100,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await SecureStore.setItemAsync(TOKEN_KEY, data.accessToken);
     await SecureStore.setItemAsync(USER_KEY, JSON.stringify(data));
     setUser(data);
+    lastRefreshedAt.current = Date.now();
     return null; // success
   };
+
+  const appState = useRef(AppState.currentState);
 
   // Refresh token when the app resumes focus (moves to foreground)
   useEffect(() => {
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
-      if (nextAppState === "active" && user?.refreshToken) {
+      if (
+        appState.current.match(/inactive|background/) &&
+        nextAppState === "active" &&
+        user?.refreshToken
+      ) {
+        // Only refresh if more than 2 minutes have passed since last refresh
+        if (Date.now() - lastRefreshedAt.current < 2 * 60 * 1000) {
+          appState.current = nextAppState;
+          return;
+        }
+
         try {
           await refresh();
         } catch {
           // Ignore app focus refresh errors (e.g. offline)
         }
       }
+      appState.current = nextAppState;
     };
 
     const subscription = AppState.addEventListener("change", handleAppStateChange);

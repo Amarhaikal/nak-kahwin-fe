@@ -55,7 +55,9 @@ export default function RegisterScreen() {
       return;
     }
 
-    router.replace("/(tabs)");
+    Alert.alert("Success", "Account created successfully. Please sign in.", [
+      { text: "OK", onPress: () => router.replace("/login" as any) }
+    ]);
   };
 
   const accentColor = isDark ? "#A78BFA" : "#7C3AED";

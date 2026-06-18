@@ -13,17 +13,46 @@ export async function apiRequest<T>(
 ): Promise<{ data: T | null; error: string | null }> {
   try {
     const response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
       headers: {
         "Content-Type": "application/json",
         ...options.headers,
       },
-      ...options,
     });
 
-    const json = await response.json();
+    if (response.status === 401) {
+      return { data: null, error: "Session expired. Please log in again." };
+    }
+
+    if (response.status === 403) {
+      return { data: null, error: "Access denied." };
+    }
+
+    const text = await response.text();
+    let json: any = null;
+    if (text) {
+      try {
+        json = JSON.parse(text);
+      } catch {
+        // Handle non-JSON error response
+      }
+    }
 
     if (!response.ok) {
-      return { data: null, error: json.message ?? "Something went wrong." };
+      if (json) {
+        if (json.errors) {
+          const firstErrorKey = Object.keys(json.errors)[0];
+          const firstErrorMessage = json.errors[firstErrorKey]?.[0];
+          if (firstErrorMessage) {
+            return { data: null, error: firstErrorMessage };
+          }
+        }
+        return {
+          data: null,
+          error: json.message ?? json.title ?? json.detail ?? `Error ${response.status}`,
+        };
+      }
+      return { data: null, error: text || `Request failed with status ${response.status}` };
     }
 
     return { data: json as T, error: null };

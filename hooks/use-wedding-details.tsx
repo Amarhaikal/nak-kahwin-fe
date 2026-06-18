@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { useAuth, getToken } from "@/hooks/use-auth";
+import { getMyPlan, createPlan, PlanDetailsResponse, CreatePlanPayload } from "@/services/plan-service";
 
 export type EventType = "marriage" | "engagement";
 
@@ -30,6 +32,10 @@ export interface SavingEntry {
 }
 
 interface WeddingDetailsContextType {
+  plan: PlanDetailsResponse | null;
+  isLoadingPlan: boolean;
+  hasPlan: boolean | null; // null = checking, false = no plan, true = plan exists
+  createNewPlan: (payload: CreatePlanPayload) => Promise<string | null>;
   activeEvent: EventType;
   setActiveEvent: (type: EventType) => void;
   marriage: EventDetails;
@@ -58,8 +64,86 @@ export function WeddingDetailsProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const { user } = useAuth();
+  const [plan, setPlan] = useState<PlanDetailsResponse | null>(null);
+  const [isLoadingPlan, setIsLoadingPlan] = useState(true);
+  const [hasPlan, setHasPlan] = useState<boolean | null>(null);
+
   const [activeEvent, setActiveEvent] = useState<EventType>("marriage");
   const [coupleNames, setCoupleNames] = useState("Amar & Syamimie");
+
+  useEffect(() => {
+    async function fetchPlan() {
+      if (!user) {
+        setPlan(null);
+        setHasPlan(false);
+        setIsLoadingPlan(false);
+        return;
+      }
+
+      if (!plan) {
+        setIsLoadingPlan(true);
+      }
+      try {
+        const token = await getToken();
+        if (token) {
+          const { data, error } = await getMyPlan(token);
+          if (data && !error) {
+            setPlan(data);
+            setHasPlan(true);
+            setCoupleNames(data.partnerName ? `${data.ownerName} & ${data.partnerName}` : data.ownerName);
+          } else {
+            setPlan(null);
+            setHasPlan(false);
+          }
+        } else {
+          setPlan(null);
+          setHasPlan(false);
+        }
+      } catch {
+        setPlan(null);
+        setHasPlan(false);
+      } finally {
+        setIsLoadingPlan(false);
+      }
+    }
+
+    fetchPlan();
+  }, [user]);
+
+  const createNewPlan = async (payload: CreatePlanPayload): Promise<string | null> => {
+    try {
+      const token = await getToken();
+      if (!token) return "Authentication token not found.";
+
+      const { data, error } = await createPlan(payload, token);
+      if (error || !data) {
+        return error ?? "Failed to create plan.";
+      }
+
+      setPlan(data);
+      setHasPlan(true);
+      setCoupleNames(data.partnerName ? `${data.ownerName} & ${data.partnerName}` : data.ownerName);
+
+      if (payload.weddingDate) {
+        setMarriage((prev) => ({
+          ...prev,
+          date: new Date(payload.weddingDate!).toISOString(),
+        }));
+      }
+
+      if (payload.isEngagementEnabled && payload.engagementDate) {
+        setEngagement((prev) => ({
+          ...prev,
+          date: new Date(payload.engagementDate!).toISOString(),
+        }));
+      }
+
+      return null; // success
+    } catch (err: any) {
+      return err.message ?? "An error occurred during plan creation.";
+    }
+  };
 
   const [marriage, setMarriage] = useState<EventDetails>({
     date: "2027-08-08T11:00:00.000Z",
@@ -161,6 +245,10 @@ export function WeddingDetailsProvider({
   return (
     <WeddingDetailsContext.Provider
       value={{
+        plan,
+        isLoadingPlan,
+        hasPlan,
+        createNewPlan,
         activeEvent,
         setActiveEvent,
         marriage,

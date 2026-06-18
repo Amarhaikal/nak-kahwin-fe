@@ -1,11 +1,11 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, Redirect, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
-import { useEffect } from 'react';
+import { View, ActivityIndicator } from 'react-native';
 
 import { useColorScheme, CustomThemeProvider } from '@/hooks/use-color-scheme';
-import { WeddingDetailsProvider } from '@/hooks/use-wedding-details';
+import { WeddingDetailsProvider, useWeddingDetails } from '@/hooks/use-wedding-details';
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
 
 export const unstable_settings = {
@@ -31,23 +31,52 @@ const CustomDarkTheme = {
 
 // Redirects unauthenticated users to login
 function AuthGate({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading: isLoadingAuth } = useAuth();
+  const { hasPlan, isLoadingPlan } = useWeddingDetails();
   const segments = useSegments();
-  const router = useRouter();
 
-  useEffect(() => {
-    if (isLoading) return; // Wait until we've checked secure storage
+  if (isLoadingAuth || (user && isLoadingPlan)) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' }}>
+        <ActivityIndicator size="large" color="#A78BFA" />
+      </View>
+    );
+  }
 
-    const inAuthGroup = segments[0] === 'login' || segments[0] === 'register';
+  const inAuthGroup = (segments[0] as string) === 'login' || (segments[0] as string) === 'register';
+  const isCreatingPlan = (segments[0] as string) === 'create-plan';
 
-    if (!user && !inAuthGroup) {
-      // Not logged in → send to login
-      router.replace('/login');
-    } else if (user && inAuthGroup) {
-      // Already logged in → send to app
-      router.replace('/(tabs)');
+  if (!user) {
+    if (!inAuthGroup) {
+      return (
+        <>
+          {children}
+          <Redirect href="/login" />
+        </>
+      );
     }
-  }, [user, isLoading, segments]);
+  } else {
+    // User is logged in
+    if (hasPlan === false) {
+      if (!isCreatingPlan) {
+        return (
+          <>
+            {children}
+            <Redirect href="/create-plan" />
+          </>
+        );
+      }
+    } else if (hasPlan === true) {
+      if (inAuthGroup || isCreatingPlan) {
+        return (
+          <>
+            {children}
+            <Redirect href="/(tabs)" />
+          </>
+        );
+      }
+    }
+  }
 
   return <>{children}</>;
 }
@@ -62,6 +91,7 @@ function InnerLayout() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="register" options={{ headerShown: false }} />
+          <Stack.Screen name="create-plan" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         </Stack>
       </AuthGate>
