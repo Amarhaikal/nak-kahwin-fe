@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { AppState, AppStateStatus } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { registerUser, loginUser, logoutUser, refreshUser, AuthResponse, RegisterPayload, LoginPayload } from "@/services/auth-service";
 
@@ -101,6 +102,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data);
     return null; // success
   };
+
+  // Refresh token when the app resumes focus (moves to foreground)
+  useEffect(() => {
+    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      if (nextAppState === "active" && user?.refreshToken) {
+        try {
+          await refresh();
+        } catch {
+          // Ignore app focus refresh errors (e.g. offline)
+        }
+      }
+    };
+
+    const subscription = AppState.addEventListener("change", handleAppStateChange);
+
+    return () => {
+      subscription.remove();
+    };
+  }, [user?.refreshToken]);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, register, login, logout, refresh }}>
