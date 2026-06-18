@@ -38,6 +38,7 @@ const MAPPING = {
   'pencil': 'edit',
   'checkmark': 'check',
   'xmark': 'close',
+  'rectangle.portrait.and.arrow.right': 'exit-to-app',
 } as IconMapping;
 
 /**

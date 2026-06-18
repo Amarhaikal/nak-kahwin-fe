@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import * as SecureStore from "expo-secure-store";
-import { registerUser, loginUser, AuthResponse, RegisterPayload, LoginPayload } from "@/services/auth-service";
+import { registerUser, loginUser, logoutUser, refreshUser, AuthResponse, RegisterPayload, LoginPayload } from "@/services/auth-service";
 
 const TOKEN_KEY = "nak_kahwin_token";
 const USER_KEY = "nak_kahwin_user";
@@ -11,6 +11,7 @@ interface AuthContextType {
   register: (payload: RegisterPayload) => Promise<string | null>;
   login: (payload: LoginPayload) => Promise<string | null>;
   logout: () => Promise<void>;
+  refresh: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -25,7 +26,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const storedUser = await SecureStore.getItemAsync(USER_KEY);
         if (storedUser) {
-          setUser(JSON.parse(storedUser));
+          const parsedUser: AuthResponse = JSON.parse(storedUser);
+          if (parsedUser.refreshToken) {
+            const { data, error } = await refreshUser(parsedUser.refreshToken);
+            if (data && !error) {
+              await SecureStore.setItemAsync(TOKEN_KEY, data.accessToken);
+              await SecureStore.setItemAsync(USER_KEY, JSON.stringify(data));
+              setUser(data);
+              return;
+            } else if (error && (error.includes("expired") || error.includes("invalid"))) {
+              // Refresh token has expired or is invalid -> log out
+              await SecureStore.deleteItemAsync(TOKEN_KEY);
+              await SecureStore.deleteItemAsync(USER_KEY);
+              setUser(null);
+              return;
+            }
+          }
+          setUser(parsedUser);
         }
       } catch {
         // Session corrupted — ignore, user will need to log in again
@@ -57,13 +74,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
+    if (user?.refreshToken) {
+      try {
+        await logoutUser(user.refreshToken, user.accessToken);
+      } catch (e) {
+        // Best-effort logout: ignore network or auth errors
+      }
+    }
     await SecureStore.deleteItemAsync(TOKEN_KEY);
     await SecureStore.deleteItemAsync(USER_KEY);
     setUser(null);
   };
 
+  const refresh = async (): Promise<string | null> => {
+    if (!user?.refreshToken) return "No refresh token available.";
+    const { data, error } = await refreshUser(user.refreshToken);
+    if (error || !data) {
+      if (error && (error.includes("expired") || error.includes("invalid"))) {
+        await logout();
+      }
+      return error ?? "Refresh failed.";
+    }
+
+    await SecureStore.setItemAsync(TOKEN_KEY, data.accessToken);
+    await SecureStore.setItemAsync(USER_KEY, JSON.stringify(data));
+    setUser(data);
+    return null; // success
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, register, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, register, login, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   );

@@ -8,6 +8,8 @@ import { Colors } from '@/constants/theme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
+import { useAuth } from '@/hooks/use-auth';
 
 // ISO string to YYYY-MM-DD
 const toLocalDateString = (isoString: string) => {
@@ -38,6 +40,8 @@ export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
   const { themePreference, setThemePreference } = useTheme();
+  const { logout } = useAuth();
+  const router = useRouter();
   
   const {
     coupleNames,
@@ -53,6 +57,11 @@ export default function ProfileScreen() {
 
   const handleToggleTheme = (value: boolean) => {
     setThemePreference(value ? 'dark' : 'light');
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace('/login');
   };
 
   const activeEventData = editTab === 'marriage' ? marriage : engagement;
@@ -263,6 +272,24 @@ export default function ProfileScreen() {
                 <View style={styles.settingTextContainer}>
                   <ThemedText style={styles.settingTitle}>Account Settings</ThemedText>
                   <ThemedText style={styles.settingSubtitle}>Change your user details and profile info</ThemedText>
+                </View>
+              </View>
+            </Pressable>
+
+            <View style={styles.rowDivider} />
+
+            {/* Logout Row */}
+            <Pressable 
+              onPress={handleLogout}
+              style={({ pressed }) => [styles.pressableSettingItem, { opacity: pressed ? 0.7 : 1 }]}
+            >
+              <View style={styles.settingItemLeft}>
+                <View style={[styles.iconContainer, { backgroundColor: 'rgba(239, 68, 68, 0.1)' }]}>
+                  <IconSymbol name="rectangle.portrait.and.arrow.right" size={20} color="#EF4444" />
+                </View>
+                <View style={styles.settingTextContainer}>
+                  <ThemedText style={[styles.settingTitle, { color: '#EF4444' }]}>Log Out</ThemedText>
+                  <ThemedText style={styles.settingSubtitle}>Sign out of your account</ThemedText>
                 </View>
               </View>
             </Pressable>

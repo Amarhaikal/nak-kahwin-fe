@@ -2,6 +2,7 @@ import { apiRequest } from "./api-client";
 
 export interface AuthResponse {
   accessToken: string;
+  refreshToken: string;
   userId: string;
   name: string;
   email: string;
@@ -33,3 +34,21 @@ export async function loginUser(payload: LoginPayload) {
     body: JSON.stringify(payload),
   });
 }
+
+export async function logoutUser(refreshToken: string, accessToken: string) {
+  return apiRequest<{ message: string }>("/api/auth/logout", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ refreshToken }),
+  });
+}
+
+export async function refreshUser(refreshToken: string) {
+  return apiRequest<AuthResponse>("/api/auth/refresh", {
+    method: "POST",
+    body: JSON.stringify({ refreshToken }),
+  });
+}
+
