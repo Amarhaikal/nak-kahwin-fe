@@ -1,11 +1,26 @@
 import { Platform } from "react-native";
+import Constants from "expo-constants";
 
-// • Web / iOS Simulator → localhost works fine
-// • Physical iPhone → uses Mac's LAN IP (must be on same WiFi)
+// Extract the host IP address dynamically from the Metro development server URI.
+// This allows the app to connect to the backend on the host Mac whether it's running
+// on a physical device (via Wi-Fi or Hotspot), simulator, or emulator, without hardcoding IPs.
+const getDevHostIp = () => {
+  const hostUri = Constants.expoConfig?.hostUri; // e.g., "192.168.1.33:8081" or "172.20.10.2:8081"
+  if (hostUri) {
+    const ip = hostUri.split(":")[0];
+    return ip;
+  }
+  return null;
+};
+
+const devHostIp = getDevHostIp();
+
 export const API_BASE_URL =
   Platform.OS === "web"
     ? "http://localhost:5114"
-    : "http://192.168.1.33:5114";
+    : devHostIp
+      ? `http://${devHostIp}:5114`
+      : "http://localhost:5114"; // Fallback to localhost if no dev server is active
 
 export async function apiRequest<T>(
   path: string,
