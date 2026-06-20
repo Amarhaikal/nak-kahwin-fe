@@ -1,13 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useAuth, getToken } from "@/hooks/use-auth";
-import { getMyPlan, createPlan, PlanDetailsResponse, CreatePlanPayload } from "@/services/plan-service";
+import { getMyPlan, createPlan, updateEvent, PlanDetailsResponse, CreatePlanPayload, UpdateEventPayload } from "@/services/plan-service";
 
 export type EventType = "marriage" | "engagement";
 
 export interface EventDetails {
   date: string; // ISO string format for easy transfer/storage
   venue: string;
-  time: string;
 }
 
 export interface BudgetItem {
@@ -36,14 +35,15 @@ interface WeddingDetailsContextType {
   isLoadingPlan: boolean;
   hasPlan: boolean | null; // null = checking, false = no plan, true = plan exists
   createNewPlan: (payload: CreatePlanPayload) => Promise<string | null>;
+  updateEventDetails: (payload: UpdateEventPayload) => Promise<string | null>;
   activeEvent: EventType;
   setActiveEvent: (type: EventType) => void;
   marriage: EventDetails;
   updateMarriage: (details: Partial<EventDetails>) => void;
   engagement: EventDetails;
   updateEngagement: (details: Partial<EventDetails>) => void;
-  coupleNames: string;
-  updateCoupleNames: (names: string) => void;
+  title: string;
+  updateTitle: (newTitle: string) => void;
   budget: BudgetDetails;
   updateBudgetCategory: (
     category: keyof Omit<BudgetDetails, "total">,
@@ -70,7 +70,7 @@ export function WeddingDetailsProvider({
   const [hasPlan, setHasPlan] = useState<boolean | null>(null);
 
   const [activeEvent, setActiveEvent] = useState<EventType>("marriage");
-  const [coupleNames, setCoupleNames] = useState("Amar & Syamimie");
+  const [title, setTitle] = useState("Amar & Syamimie");
 
   useEffect(() => {
     async function fetchPlan() {
@@ -91,7 +91,22 @@ export function WeddingDetailsProvider({
           if (data && !error) {
             setPlan(data);
             setHasPlan(true);
-            setCoupleNames(data.partnerName ? `${data.ownerName} & ${data.partnerName}` : data.ownerName);
+            setTitle(data.title || (data.partnerName ? `${data.ownerName} & ${data.partnerName}` : data.ownerName));
+            
+            if (data.marriageVenue || data.marriageDate) {
+              setMarriage((prev) => ({
+                ...prev,
+                venue: data.marriageVenue || "",
+                date: data.marriageDate ? `${data.marriageDate}T12:00:00.000Z` : "",
+              }));
+            }
+            if (data.engagementVenue || data.engagementDate) {
+              setEngagement((prev) => ({
+                ...prev,
+                venue: data.engagementVenue || "",
+                date: data.engagementDate ? `${data.engagementDate}T12:00:00.000Z` : "",
+              }));
+            }
           } else {
             setPlan(null);
             setHasPlan(false);
@@ -123,7 +138,7 @@ export function WeddingDetailsProvider({
 
       setPlan(data);
       setHasPlan(true);
-      setCoupleNames(data.partnerName ? `${data.ownerName} & ${data.partnerName}` : data.ownerName);
+      setTitle(data.title || (data.partnerName ? `${data.ownerName} & ${data.partnerName}` : data.ownerName));
 
       if (payload.weddingDate) {
         setMarriage((prev) => ({
@@ -145,16 +160,51 @@ export function WeddingDetailsProvider({
     }
   };
 
+  const updateEventDetails = async (payload: UpdateEventPayload): Promise<string | null> => {
+    try {
+      if (!plan) return "No active event workspace found.";
+      const token = await getToken();
+      if (!token) return "Authentication token not found.";
+
+      const { data, error } = await updateEvent(plan.id, payload, token);
+      if (error || !data) {
+        return error ?? "Failed to update event workspace.";
+      }
+
+      setPlan(data);
+      if (data.title) {
+        setTitle(data.title);
+      }
+      if (payload.marriageVenue !== undefined || payload.marriageDate !== undefined) {
+        setMarriage((prev) => ({
+          ...prev,
+          venue: data.marriageVenue || "",
+          date: data.marriageDate ? `${data.marriageDate}T12:00:00.000Z` : "",
+        }));
+      }
+
+      if (payload.engagementVenue !== undefined || payload.engagementDate !== undefined) {
+        setEngagement((prev) => ({
+          ...prev,
+          venue: data.engagementVenue || "",
+          date: data.engagementDate ? `${data.engagementDate}T12:00:00.000Z` : "",
+        }));
+      }
+
+      return null; // success
+    } catch (err: any) {
+      return err.message ?? "An error occurred during event update.";
+    }
+  };
+
   const [marriage, setMarriage] = useState<EventDetails>({
     date: "2027-08-08T11:00:00.000Z",
     venue: "De'Emerald Garden, Banting",
-    time: "11:00 AM",
   });
 
   const [engagement, setEngagement] = useState<EventDetails>({
     date: "2026-12-12T15:00:00.000Z",
     venue: "Syamimie's House",
-    time: "3:00 PM",
   });
 
   const [marriageBudget, setMarriageBudget] = useState<BudgetDetails>({
@@ -200,8 +250,8 @@ export function WeddingDetailsProvider({
     setEngagement((prev) => ({ ...prev, ...details }));
   };
 
-  const updateCoupleNames = (names: string) => {
-    setCoupleNames(names);
+  const updateTitle = (newTitle: string) => {
+    setTitle(newTitle);
   };
 
   const updateBudgetCategory = (
@@ -249,14 +299,15 @@ export function WeddingDetailsProvider({
         isLoadingPlan,
         hasPlan,
         createNewPlan,
+        updateEventDetails,
         activeEvent,
         setActiveEvent,
         marriage,
         updateMarriage,
         engagement,
         updateEngagement,
-        coupleNames,
-        updateCoupleNames,
+        title,
+        updateTitle,
         budget,
         updateBudgetCategory,
         updateTotalBudgetLimit,

@@ -21,7 +21,7 @@ export default function MainScreen() {
   const isDark = colorScheme === "dark";
   const accentColor = isDark ? "#A78BFA" : "#7C3AED"; // Theme-based purple accent
 
-  const { activeEvent, setActiveEvent, marriage, engagement, coupleNames } = useWeddingDetails();
+  const { activeEvent, setActiveEvent, marriage, engagement, title } = useWeddingDetails();
   const activeDetails = activeEvent === 'marriage' ? marriage : engagement;
 
   const horizontalScrollRef = useRef<ScrollView>(null);
@@ -225,8 +225,8 @@ export default function MainScreen() {
                 <ThemedText style={[styles.countdownHeader, { color: accentColor }]}>
                   Save the Date
                 </ThemedText>
-                <ThemedText style={[styles.coupleNames, { color: isDark ? "#ffffff" : "#1E1B4B" }]}>
-                  {coupleNames}
+                <ThemedText style={[styles.title, { color: isDark ? "#ffffff" : "#1E1B4B" }]}>
+                  {title}
                 </ThemedText>
                 <ThemedText style={[styles.dateText, { color: accentColor }]}>
                   {formatDateString(new Date(marriage.date))}
@@ -302,8 +302,8 @@ export default function MainScreen() {
                 <ThemedText style={[styles.countdownHeader, { color: accentColor }]}>
                   Tunang Countdown
                 </ThemedText>
-                <ThemedText style={[styles.coupleNames, { color: isDark ? "#ffffff" : "#1E1B4B" }]}>
-                  {coupleNames}
+                <ThemedText style={[styles.title, { color: isDark ? "#ffffff" : "#1E1B4B" }]}>
+                  {title}
                 </ThemedText>
                 <ThemedText style={[styles.dateText, { color: accentColor }]}>
                   {formatDateString(new Date(engagement.date))}
@@ -420,7 +420,7 @@ export default function MainScreen() {
                 { color: isDark ? "#A78BFA" : "#7C3AED" },
               ]}
             >
-              {formatDateString(new Date(activeDetails.date))} at {activeDetails.time}
+              {formatDateString(new Date(activeDetails.date))}
             </ThemedText>
           </BlurView>
 
@@ -566,7 +566,7 @@ const styles = StyleSheet.create({
     letterSpacing: 3,
     marginBottom: 6,
   },
-  coupleNames: {
+  title: {
     fontSize: 25,
     fontWeight: "bold",
     letterSpacing: 0.5,

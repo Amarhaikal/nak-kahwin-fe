@@ -19,7 +19,7 @@ export default function SavingsScreen() {
 
   const { 
     budget, 
-    coupleNames,
+    title,
     savings,
     addSaving,
     deleteSaving
@@ -70,7 +70,7 @@ export default function SavingsScreen() {
           <View style={styles.bannerOverlay} />
           <View style={styles.headerContent}>
             <ThemedText style={styles.screenTitle}>Monthly Savings</ThemedText>
-            <ThemedText style={styles.screenSub}>{coupleNames}'s Cash In Logs</ThemedText>
+            <ThemedText style={styles.screenSub}>{title}'s Cash In Logs</ThemedText>
           </View>
         </LinearGradient>
 

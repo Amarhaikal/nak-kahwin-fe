@@ -35,7 +35,7 @@ export default function BudgetScreen() {
     budget, 
     updateBudgetCategory, 
     updateTotalBudgetLimit, 
-    coupleNames,
+    title,
     savings,
     activeEvent,
     setActiveEvent
@@ -134,7 +134,7 @@ export default function BudgetScreen() {
           <View style={styles.headerContent}>
             <ThemedText style={styles.screenTitle}>Wedding Budget</ThemedText>
             <ThemedText style={styles.screenSub}>
-              {coupleNames}{`'s ${activeEvent === 'marriage' ? 'Nikah' : 'Tunang'} Finance Tracker`}
+              {title}{`'s ${activeEvent === 'marriage' ? 'Nikah' : 'Tunang'} Finance Tracker`}
             </ThemedText>
           </View>
         </LinearGradient>

@@ -91,38 +91,8 @@ export default function CreatePlanScreen() {
     const parts = dateStr.split("-");
     if (parts.length !== 3) return "Not set yet (can set later)";
 
-    const year = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1;
-    const day = parseInt(parts[2], 10);
-    const date = new Date(year, month, day);
-
-    if (isNaN(date.getTime())) return "Not set yet (can set later)";
-
-    const daysOfWeek = [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-    ];
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-
-    return `${daysOfWeek[date.getDay()]}, ${day} ${months[month]} ${year}`;
+    const [year, month, day] = parts;
+    return `${day}/${month}/${year}`;
   };
 
   return (

@@ -48,6 +48,15 @@ export function DatePicker({ value, onChange, placeholder = "Select date", label
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   };
 
+  // Year navigation
+  const nextYear = () => {
+    setCurrentDate(new Date(currentDate.getFullYear() + 1, currentDate.getMonth(), 1));
+  };
+
+  const prevYear = () => {
+    setCurrentDate(new Date(currentDate.getFullYear() - 1, currentDate.getMonth(), 1));
+  };
+
   // Calendar math
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
@@ -71,9 +80,10 @@ export function DatePicker({ value, onChange, placeholder = "Select date", label
 
   const formatDisplayDate = (date: Date | null): string => {
     if (!date) return "";
-    const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    return `${daysOfWeek[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
   };
 
   const formatValueDate = (date: Date): string => {
@@ -163,15 +173,25 @@ export function DatePicker({ value, onChange, placeholder = "Select date", label
 
             {/* Month & Year Navigation */}
             <View style={styles.monthSelector}>
-              <Pressable onPress={prevMonth} style={styles.navButton}>
-                <MaterialIcons name="chevron-left" size={28} color={isDark ? "#fff" : "#1F2937"} />
-              </Pressable>
+              <View style={styles.navGroup}>
+                <Pressable onPress={prevYear} style={styles.navButton}>
+                  <MaterialIcons name="fast-rewind" size={22} color={isDark ? "#aaa" : "#64748B"} />
+                </Pressable>
+                <Pressable onPress={prevMonth} style={styles.navButton}>
+                  <MaterialIcons name="chevron-left" size={28} color={isDark ? "#fff" : "#1F2937"} />
+                </Pressable>
+              </View>
               <Text style={[styles.monthText, { color: isDark ? "#fff" : "#1F2937" }]}>
                 {monthsList[currentMonth]} {currentYear}
               </Text>
-              <Pressable onPress={nextMonth} style={styles.navButton}>
-                <MaterialIcons name="chevron-right" size={28} color={isDark ? "#fff" : "#1F2937"} />
-              </Pressable>
+              <View style={styles.navGroup}>
+                <Pressable onPress={nextMonth} style={styles.navButton}>
+                  <MaterialIcons name="chevron-right" size={28} color={isDark ? "#fff" : "#1F2937"} />
+                </Pressable>
+                <Pressable onPress={nextYear} style={styles.navButton}>
+                  <MaterialIcons name="fast-forward" size={22} color={isDark ? "#aaa" : "#64748B"} />
+                </Pressable>
+              </View>
             </View>
 
             {/* Weekdays Header */}
@@ -349,6 +369,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 12,
     paddingVertical: 12,
+  },
+  navGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   navButton: {
     padding: 4,
