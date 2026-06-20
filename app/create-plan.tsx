@@ -277,7 +277,7 @@ export default function CreatePlanScreen() {
                 </ThemedText>
                 <ThemedText style={styles.cardSub}>
                   Make sure everything is correct. You can edit these details
-                  any time.
+                  later at any time in your profile settings.
                 </ThemedText>
 
                 <View
@@ -647,5 +647,17 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     fontWeight: "600",
     fontSize: 15,
+  },
+  editLaterNotice: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 12,
+    paddingHorizontal: 4,
+  },
+  editLaterText: {
+    fontSize: 12,
+    flex: 1,
+    lineHeight: 16,
   },
 });

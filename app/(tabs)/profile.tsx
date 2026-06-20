@@ -10,6 +10,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/hooks/use-auth';
+import { DatePicker } from '@/components/date-picker';
+
+// Extract YYYY-MM-DD from ISO Date string
+const toISODateString = (isoString: string | null | undefined) => {
+  if (!isoString) return "";
+  return isoString.split('T')[0];
+};
 
 // ISO string (or other formats) to dd/MM/yyyy
 const toLocalDateString = (isoString: string) => {
@@ -84,9 +91,9 @@ export default function ProfileScreen() {
   const [editTitle, setEditTitle] = useState(title);
   const [editIsEngagementEnabled, setEditIsEngagementEnabled] = useState(plan?.isEngagementEnabled ?? false);
   const [marriageVenue, setMarriageVenue] = useState(marriage?.venue ?? "");
-  const [marriageDate, setMarriageDate] = useState(toLocalDateString(marriage?.date ?? ""));
+  const [marriageDate, setMarriageDate] = useState(toISODateString(marriage?.date));
   const [engagementVenue, setEngagementVenue] = useState(engagement?.venue ?? "");
-  const [engagementDate, setEngagementDate] = useState(toLocalDateString(engagement?.date ?? ""));
+  const [engagementDate, setEngagementDate] = useState(toISODateString(engagement?.date));
 
   // Sync state with incoming details/plan updates when not editing
   React.useEffect(() => {
@@ -94,9 +101,9 @@ export default function ProfileScreen() {
       setEditTitle(title);
       setEditIsEngagementEnabled(plan?.isEngagementEnabled ?? false);
       setMarriageVenue(marriage?.venue ?? "");
-      setMarriageDate(toLocalDateString(marriage?.date ?? ""));
+      setMarriageDate(toISODateString(marriage?.date));
       setEngagementVenue(engagement?.venue ?? "");
-      setEngagementDate(toLocalDateString(engagement?.date ?? ""));
+      setEngagementDate(toISODateString(engagement?.date));
       if (!plan?.isEngagementEnabled) {
         setEditTab('marriage');
       }
@@ -107,9 +114,9 @@ export default function ProfileScreen() {
     setEditTitle(title);
     setEditIsEngagementEnabled(plan?.isEngagementEnabled ?? false);
     setMarriageVenue(marriage?.venue ?? "");
-    setMarriageDate(toLocalDateString(marriage?.date ?? ""));
+    setMarriageDate(toISODateString(marriage?.date));
     setEngagementVenue(engagement?.venue ?? "");
-    setEngagementDate(toLocalDateString(engagement?.date ?? ""));
+    setEngagementDate(toISODateString(engagement?.date));
     setIsEditing(true);
     if (!plan?.isEngagementEnabled) {
       setEditTab('marriage');
@@ -125,11 +132,11 @@ export default function ProfileScreen() {
     const isoEngagement = toISODateOnly(engagementDate);
 
     if (marriageDate && !isoMarriage) {
-      alert("Invalid Nikah date format. Please use DD/MM/YYYY");
+      alert("Invalid Nikah date format.");
       return;
     }
     if (editIsEngagementEnabled && engagementDate && !isoEngagement) {
-      alert("Invalid Tunang date format. Please use DD/MM/YYYY");
+      alert("Invalid Tunang date format.");
       return;
     }
 
@@ -298,31 +305,16 @@ export default function ProfileScreen() {
 
             {/* Date Input/Display */}
             <View style={styles.inputContainer}>
-              <ThemedText style={styles.inputLabel}>Date (DD/MM/YYYY)</ThemedText>
+              <ThemedText style={styles.inputLabel}>Date</ThemedText>
               {isEditing ? (
-                <TextInput
-                  style={[
-                    styles.textInput,
-                    {
-                      backgroundColor: isDarkMode ? '#2D3748' : '#F1F5F9',
-                      color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
-                      borderColor: isDarkMode ? '#4A5568' : '#CBD5E1',
-                    },
-                    (editTab === 'engagement' && !editIsEngagementEnabled) && {
-                      backgroundColor: isDarkMode ? '#1A202C' : '#E2E8F0',
-                      color: isDarkMode ? '#718096' : '#A0AEC0',
-                      borderColor: isDarkMode ? '#2D3748' : '#CBD5E1',
-                    }
-                  ]}
+                <DatePicker
                   value={editTab === 'marriage' ? marriageDate : engagementDate}
-                  editable={editTab === 'marriage' || editIsEngagementEnabled}
-                  onChangeText={(text) => editTab === 'marriage' ? setMarriageDate(text) : setEngagementDate(text)}
-                  placeholder="DD/MM/YYYY"
-                  placeholderTextColor={isDarkMode ? '#A0AEC0' : '#94A3B8'}
+                  onChange={(date) => editTab === 'marriage' ? setMarriageDate(date) : setEngagementDate(date)}
+                  placeholder={editTab === 'marriage' ? "Select Nikah date" : "Select Tunang date"}
                 />
               ) : (
                 <ThemedText style={styles.detailTextValue}>
-                  {editTab === 'marriage' ? marriageDate : engagementDate}
+                  {toLocalDateString(editTab === 'marriage' ? marriageDate : engagementDate)}
                 </ThemedText>
               )}
             </View>
