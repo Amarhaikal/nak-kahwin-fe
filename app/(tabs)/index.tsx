@@ -5,7 +5,7 @@ import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useState, useRef } from "react";
-import { Dimensions, Platform, StyleSheet, View, Pressable, ScrollView } from "react-native";
+import { Dimensions, Platform, StyleSheet, View, Pressable, ScrollView, ActivityIndicator, Alert } from "react-native";
 import Animated, {
   Extrapolation,
   interpolate,
@@ -13,6 +13,8 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
 } from "react-native-reanimated";
+import * as ImagePicker from "expo-image-picker";
+import { IconSymbol } from "@/components/ui/icon-symbol";
 
 const { height } = Dimensions.get("window");
 
@@ -21,8 +23,55 @@ export default function MainScreen() {
   const isDark = colorScheme === "dark";
   const accentColor = isDark ? "#A78BFA" : "#7C3AED"; // Theme-based purple accent
 
-  const { activeEvent, setActiveEvent, marriage, engagement, title } = useWeddingDetails();
+  const defaultGradientColors = isDark
+    ? ["#2E1065", "#1E1B4B", "#121212"] as const
+    : ["#EDE9FE", "#E0F2FE", "#F1F5F9"] as const;
+
+  const {
+    activeEvent,
+    setActiveEvent,
+    marriage,
+    engagement,
+    title,
+    plan,
+    uploadEventPicture,
+  } = useWeddingDetails();
+
   const activeDetails = activeEvent === 'marriage' ? marriage : engagement;
+  const customImageUrl = activeEvent === 'marriage' ? plan?.marriageImageUrl : plan?.engagementImageUrl;
+
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleImagePick = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Sorry, we need camera roll permissions to upload cover photos.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const selectedUri = result.assets[0].uri;
+        setIsUploading(true);
+        const error = await uploadEventPicture(selectedUri, activeEvent);
+        if (error) {
+          Alert.alert('Upload Failed', error);
+        } else {
+          Alert.alert('Success', 'Cover image uploaded successfully.');
+        }
+      }
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'An error occurred during image selection.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const horizontalScrollRef = useRef<ScrollView>(null);
   const isInternalScroll = useRef(false);
@@ -153,8 +202,6 @@ export default function MainScreen() {
     };
   });
 
-  const heroImageSource = require("@/assets/images/background-2.jpg");
-
   return (
     <View
       style={[
@@ -162,6 +209,33 @@ export default function MainScreen() {
         { backgroundColor: isDark ? "#121212" : "#F1F5F9" },
       ]}
     >
+      {/* Floating Action Button to change the cover picture if already set */}
+      {customImageUrl && (
+        <Pressable
+          style={({ pressed }) => [
+            styles.changeImageButton,
+            { opacity: pressed ? 0.8 : 1 },
+          ]}
+          onPress={handleImagePick}
+          disabled={isUploading}
+        >
+          <BlurView
+            tint={isDark ? "dark" : "light"}
+            intensity={60}
+            style={styles.changeImageBlur}
+          >
+            {isUploading ? (
+              <ActivityIndicator size="small" color={accentColor} />
+            ) : (
+              <>
+                <IconSymbol name="camera.fill" size={16} color={accentColor} />
+                <ThemedText style={styles.changeImageText}>Change Cover</ThemedText>
+              </>
+            )}
+          </BlurView>
+        </Pressable>
+      )}
+
       {/* 70% Height Animated Image Header with Gradient Fade */}
       <Animated.View
         style={[
@@ -170,11 +244,20 @@ export default function MainScreen() {
           animatedBackgroundStyle,
         ]}
       >
-        <Image
-          source={heroImageSource}
-          style={styles.heroImage}
-          contentFit="cover"
-        />
+        {customImageUrl ? (
+          <Image
+            source={{ uri: customImageUrl }}
+            style={styles.heroImage}
+            contentFit="cover"
+          />
+        ) : (
+          <LinearGradient
+            colors={defaultGradientColors}
+            style={StyleSheet.absoluteFillObject}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          />
+        )}
         {/* Fade to background color at the bottom */}
         <LinearGradient
           colors={
@@ -186,8 +269,6 @@ export default function MainScreen() {
         />
       </Animated.View>
 
-
-
       {/* Scrollable Content overlaying background */}
       <Animated.ScrollView
         onScroll={scrollHandler}
@@ -196,7 +277,43 @@ export default function MainScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Top Spacer to push everything below the fold except the countdown card */}
-        <View style={{ height: height - 370 }} />
+        <View style={[styles.topSpacer, { height: height - 370 }]}>
+          {!customImageUrl && (
+            <Pressable
+              style={({ pressed }) => [
+                styles.uploadPlaceholderCard,
+                { opacity: pressed ? 0.8 : 1 },
+              ]}
+              onPress={handleImagePick}
+              disabled={isUploading}
+            >
+              <BlurView
+                tint={isDark ? "dark" : "light"}
+                intensity={60}
+                style={styles.uploadPlaceholderBlur}
+              >
+                {isUploading ? (
+                  <View style={styles.uploadLoadingBox}>
+                    <ActivityIndicator size="large" color={accentColor} />
+                    <ThemedText style={styles.uploadLoadingText}>Uploading...</ThemedText>
+                  </View>
+                ) : (
+                  <>
+                    <View style={[styles.cameraIconContainer, { backgroundColor: isDark ? "rgba(167, 139, 250, 0.15)" : "rgba(124, 58, 237, 0.1)" }]}>
+                      <IconSymbol name="camera.fill" size={28} color={accentColor} />
+                    </View>
+                    <ThemedText style={styles.uploadPlaceholderText}>
+                      Upload Cover Photo
+                    </ThemedText>
+                    <ThemedText style={[styles.uploadPlaceholderSubtext, { color: isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)" }]}>
+                      {activeEvent === 'marriage' ? 'Nikah Cover' : 'Tunang Cover'}
+                    </ThemedText>
+                  </>
+                )}
+              </BlurView>
+            </Pressable>
+          )}
+        </View>
 
         {/* Horizontal Paging ScrollView for Countdown Cards */}
         <View style={styles.horizontalScrollWrapper}>
@@ -694,5 +811,77 @@ const styles = StyleSheet.create({
   dot: {
     height: 6,
     borderRadius: 3,
+  },
+  topSpacer: {
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 40,
+  },
+  uploadPlaceholderCard: {
+    width: "85%",
+    borderRadius: 20,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: "rgba(124, 58, 237, 0.3)",
+  },
+  uploadPlaceholderBlur: {
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cameraIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  uploadPlaceholderText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  uploadPlaceholderSubtext: {
+    fontSize: 12,
+  },
+  uploadLoadingBox: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+  },
+  uploadLoadingText: {
+    marginTop: 10,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  changeImageButton: {
+    position: "absolute",
+    top: Platform.OS === "ios" ? 60 : 40,
+    right: 20,
+    borderRadius: 20,
+    overflow: "hidden",
+    zIndex: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.15)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  changeImageBlur: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    gap: 6,
+  },
+  changeImageText: {
+    fontSize: 12,
+    fontWeight: "bold",
   },
 });

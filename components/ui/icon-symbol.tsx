@@ -39,6 +39,7 @@ const MAPPING = {
   'checkmark': 'check',
   'xmark': 'close',
   'rectangle.portrait.and.arrow.right': 'exit-to-app',
+  'camera.fill': 'photo-camera',
 } as IconMapping;
 
 /**

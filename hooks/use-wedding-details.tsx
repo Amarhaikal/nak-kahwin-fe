@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useAuth, getToken } from "@/hooks/use-auth";
-import { getMyPlan, createPlan, updateEvent, PlanDetailsResponse, CreatePlanPayload, UpdateEventPayload } from "@/services/plan-service";
+import { getMyPlan, createPlan, updateEvent, uploadEventImage, PlanDetailsResponse, CreatePlanPayload, UpdateEventPayload } from "@/services/plan-service";
 
 export type EventType = "marriage" | "engagement";
 
@@ -36,6 +36,7 @@ interface WeddingDetailsContextType {
   hasPlan: boolean | null; // null = checking, false = no plan, true = plan exists
   createNewPlan: (payload: CreatePlanPayload) => Promise<string | null>;
   updateEventDetails: (payload: UpdateEventPayload) => Promise<string | null>;
+  uploadEventPicture: (uri: string, eventType: EventType) => Promise<string | null>;
   activeEvent: EventType;
   setActiveEvent: (type: EventType) => void;
   marriage: EventDetails | null;
@@ -193,6 +194,24 @@ export function WeddingDetailsProvider({
     }
   };
 
+  const uploadEventPicture = async (uri: string, eventType: EventType): Promise<string | null> => {
+    try {
+      if (!plan) return "No active event workspace found.";
+      const token = await getToken();
+      if (!token) return "Authentication token not found.";
+
+      const { data, error } = await uploadEventImage(plan.id, eventType, uri, token);
+      if (error || !data) {
+        return error ?? "Failed to upload image.";
+      }
+
+      setPlan(data);
+      return null; // success
+    } catch (err: any) {
+      return err.message ?? "An error occurred during image upload.";
+    }
+  };
+
   const [marriage, setMarriage] = useState<EventDetails | null>(null);
 
   const [engagement, setEngagement] = useState<EventDetails | null>(null);
@@ -298,6 +317,7 @@ export function WeddingDetailsProvider({
         hasPlan,
         createNewPlan,
         updateEventDetails,
+        uploadEventPicture,
         activeEvent,
         setActiveEvent,
         marriage,
