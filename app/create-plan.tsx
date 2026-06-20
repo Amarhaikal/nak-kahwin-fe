@@ -203,7 +203,7 @@ export default function CreatePlanScreen() {
                     }
                     value={title}
                     onChangeText={setTitle}
-                    placeholder="e.g. Amar & Syamimie's Wedding"
+                    placeholder="e.g. Amar & Mimie"
                     placeholderTextColor={isDark ? "#555" : "#94A3B8"}
                     autoCapitalize="words"
                     maxLength={100}
