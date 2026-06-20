@@ -309,7 +309,7 @@ export default function CreatePlanScreen() {
                         { color: isDark ? "#888" : "#64748B" },
                       ]}
                     >
-                      Wedding (Nikah) Date
+                      Wedding Date
                     </Text>
                     <ThemedText style={styles.summaryValue}>
                       {displayDateStr(weddingDate)}
@@ -318,7 +318,7 @@ export default function CreatePlanScreen() {
 
                   <View style={styles.summaryDivider} />
 
-                  <View style={styles.summaryItem}>
+                  {/* <View style={styles.summaryItem}>
                     <Text
                       style={[
                         styles.summaryLabel,
@@ -330,7 +330,7 @@ export default function CreatePlanScreen() {
                     <ThemedText style={styles.summaryValue}>
                       {isEngagementEnabled ? "Enabled" : "Disabled"}
                     </ThemedText>
-                  </View>
+                  </View> */}
 
                   {isEngagementEnabled && (
                     <>
