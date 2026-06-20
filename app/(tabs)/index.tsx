@@ -49,8 +49,10 @@ export default function MainScreen() {
   });
 
   useEffect(() => {
-    const calculateTimeLeftForDate = (targetDateStr: string) => {
+    const calculateTimeLeftForDate = (targetDateStr: string | null | undefined) => {
+      if (!targetDateStr) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
       const tDate = new Date(targetDateStr);
+      if (isNaN(tDate.getTime())) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
       const difference = tDate.getTime() - new Date().getTime();
       if (difference <= 0) {
         return { days: 0, hours: 0, minutes: 0, seconds: 0 };
@@ -64,15 +66,15 @@ export default function MainScreen() {
     };
 
     const updateAllTimers = () => {
-      setMarriageTimeLeft(calculateTimeLeftForDate(marriage.date));
-      setEngagementTimeLeft(calculateTimeLeftForDate(engagement.date));
+      setMarriageTimeLeft(calculateTimeLeftForDate(marriage?.date));
+      setEngagementTimeLeft(calculateTimeLeftForDate(engagement?.date));
     };
 
     updateAllTimers();
     const timer = setInterval(updateAllTimers, 1000);
 
     return () => clearInterval(timer);
-  }, [marriage.date, engagement.date]);
+  }, [marriage?.date, engagement?.date]);
 
   // Sync state when user swipes
   const onScrollEnd = (event: any) => {
@@ -107,7 +109,10 @@ export default function MainScreen() {
     return num.toString().padStart(2, "0");
   };
 
-  const formatDateString = (date: Date) => {
+  const formatDateString = (dateInput: Date | string | null | undefined) => {
+    if (!dateInput) return "Not Scheduled";
+    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+    if (isNaN(date.getTime())) return "Not Scheduled";
     const options: Intl.DateTimeFormatOptions = {
       weekday: "long",
       year: "numeric",
@@ -229,7 +234,7 @@ export default function MainScreen() {
                   {title}
                 </ThemedText>
                 <ThemedText style={[styles.dateText, { color: accentColor }]}>
-                  {formatDateString(new Date(marriage.date))}
+                  {formatDateString(marriage?.date)}
                 </ThemedText>
 
                 <View style={styles.timerContainer}>
@@ -306,7 +311,7 @@ export default function MainScreen() {
                   {title}
                 </ThemedText>
                 <ThemedText style={[styles.dateText, { color: accentColor }]}>
-                  {formatDateString(new Date(engagement.date))}
+                  {formatDateString(engagement?.date)}
                 </ThemedText>
 
                 <View style={styles.timerContainer}>
@@ -412,7 +417,7 @@ export default function MainScreen() {
                 { color: isDark ? "#ffffff" : "#4C1D95" },
               ]}
             >
-              {activeDetails.venue}
+              {activeDetails?.venue || "Not Scheduled"}
             </ThemedText>
             <ThemedText
               style={[
@@ -420,7 +425,7 @@ export default function MainScreen() {
                 { color: isDark ? "#A78BFA" : "#7C3AED" },
               ]}
             >
-              {formatDateString(new Date(activeDetails.date))}
+              {formatDateString(activeDetails?.date)}
             </ThemedText>
           </BlurView>
 

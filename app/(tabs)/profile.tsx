@@ -83,20 +83,20 @@ export default function ProfileScreen() {
   // Local editing states
   const [editTitle, setEditTitle] = useState(title);
   const [editIsEngagementEnabled, setEditIsEngagementEnabled] = useState(plan?.isEngagementEnabled ?? false);
-  const [marriageVenue, setMarriageVenue] = useState(marriage.venue);
-  const [marriageDate, setMarriageDate] = useState(toLocalDateString(marriage.date));
-  const [engagementVenue, setEngagementVenue] = useState(engagement.venue);
-  const [engagementDate, setEngagementDate] = useState(toLocalDateString(engagement.date));
+  const [marriageVenue, setMarriageVenue] = useState(marriage?.venue ?? "");
+  const [marriageDate, setMarriageDate] = useState(toLocalDateString(marriage?.date ?? ""));
+  const [engagementVenue, setEngagementVenue] = useState(engagement?.venue ?? "");
+  const [engagementDate, setEngagementDate] = useState(toLocalDateString(engagement?.date ?? ""));
 
   // Sync state with incoming details/plan updates when not editing
   React.useEffect(() => {
     if (!isEditing) {
       setEditTitle(title);
       setEditIsEngagementEnabled(plan?.isEngagementEnabled ?? false);
-      setMarriageVenue(marriage.venue);
-      setMarriageDate(toLocalDateString(marriage.date));
-      setEngagementVenue(engagement.venue);
-      setEngagementDate(toLocalDateString(engagement.date));
+      setMarriageVenue(marriage?.venue ?? "");
+      setMarriageDate(toLocalDateString(marriage?.date ?? ""));
+      setEngagementVenue(engagement?.venue ?? "");
+      setEngagementDate(toLocalDateString(engagement?.date ?? ""));
       if (!plan?.isEngagementEnabled) {
         setEditTab('marriage');
       }
@@ -106,10 +106,10 @@ export default function ProfileScreen() {
   const startEditing = () => {
     setEditTitle(title);
     setEditIsEngagementEnabled(plan?.isEngagementEnabled ?? false);
-    setMarriageVenue(marriage.venue);
-    setMarriageDate(toLocalDateString(marriage.date));
-    setEngagementVenue(engagement.venue);
-    setEngagementDate(toLocalDateString(engagement.date));
+    setMarriageVenue(marriage?.venue ?? "");
+    setMarriageDate(toLocalDateString(marriage?.date ?? ""));
+    setEngagementVenue(engagement?.venue ?? "");
+    setEngagementDate(toLocalDateString(engagement?.date ?? ""));
     setIsEditing(true);
     if (!plan?.isEngagementEnabled) {
       setEditTab('marriage');

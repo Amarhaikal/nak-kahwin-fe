@@ -38,9 +38,9 @@ interface WeddingDetailsContextType {
   updateEventDetails: (payload: UpdateEventPayload) => Promise<string | null>;
   activeEvent: EventType;
   setActiveEvent: (type: EventType) => void;
-  marriage: EventDetails;
+  marriage: EventDetails | null;
   updateMarriage: (details: Partial<EventDetails>) => void;
-  engagement: EventDetails;
+  engagement: EventDetails | null;
   updateEngagement: (details: Partial<EventDetails>) => void;
   title: string;
   updateTitle: (newTitle: string) => void;
@@ -94,18 +94,16 @@ export function WeddingDetailsProvider({
             setTitle(data.title || (data.partnerName ? `${data.ownerName} & ${data.partnerName}` : data.ownerName));
             
             if (data.marriageVenue || data.marriageDate) {
-              setMarriage((prev) => ({
-                ...prev,
+              setMarriage({
                 venue: data.marriageVenue || "",
                 date: data.marriageDate ? `${data.marriageDate}T12:00:00.000Z` : "",
-              }));
+              });
             }
             if (data.engagementVenue || data.engagementDate) {
-              setEngagement((prev) => ({
-                ...prev,
+              setEngagement({
                 venue: data.engagementVenue || "",
                 date: data.engagementDate ? `${data.engagementDate}T12:00:00.000Z` : "",
-              }));
+              });
             }
           } else {
             setPlan(null);
@@ -142,14 +140,14 @@ export function WeddingDetailsProvider({
 
       if (payload.weddingDate) {
         setMarriage((prev) => ({
-          ...prev,
+          venue: prev?.venue || "",
           date: new Date(payload.weddingDate!).toISOString(),
         }));
       }
 
       if (payload.isEngagementEnabled && payload.engagementDate) {
         setEngagement((prev) => ({
-          ...prev,
+          venue: prev?.venue || "",
           date: new Date(payload.engagementDate!).toISOString(),
         }));
       }
@@ -176,19 +174,17 @@ export function WeddingDetailsProvider({
         setTitle(data.title);
       }
       if (payload.marriageVenue !== undefined || payload.marriageDate !== undefined) {
-        setMarriage((prev) => ({
-          ...prev,
+        setMarriage({
           venue: data.marriageVenue || "",
           date: data.marriageDate ? `${data.marriageDate}T12:00:00.000Z` : "",
-        }));
+        });
       }
 
       if (payload.engagementVenue !== undefined || payload.engagementDate !== undefined) {
-        setEngagement((prev) => ({
-          ...prev,
+        setEngagement({
           venue: data.engagementVenue || "",
           date: data.engagementDate ? `${data.engagementDate}T12:00:00.000Z` : "",
-        }));
+        });
       }
 
       return null; // success
@@ -197,15 +193,9 @@ export function WeddingDetailsProvider({
     }
   };
 
-  const [marriage, setMarriage] = useState<EventDetails>({
-    date: "2027-08-08T11:00:00.000Z",
-    venue: "De'Emerald Garden, Banting",
-  });
+  const [marriage, setMarriage] = useState<EventDetails | null>(null);
 
-  const [engagement, setEngagement] = useState<EventDetails>({
-    date: "2026-12-12T15:00:00.000Z",
-    venue: "Syamimie's House",
-  });
+  const [engagement, setEngagement] = useState<EventDetails | null>(null);
 
   const [marriageBudget, setMarriageBudget] = useState<BudgetDetails>({
     total: 20000,
@@ -243,11 +233,19 @@ export function WeddingDetailsProvider({
   ]);
 
   const updateMarriage = (details: Partial<EventDetails>) => {
-    setMarriage((prev) => ({ ...prev, ...details }));
+    setMarriage((prev) => ({
+      date: prev?.date || "",
+      venue: prev?.venue || "",
+      ...details,
+    }));
   };
 
   const updateEngagement = (details: Partial<EventDetails>) => {
-    setEngagement((prev) => ({ ...prev, ...details }));
+    setEngagement((prev) => ({
+      date: prev?.date || "",
+      venue: prev?.venue || "",
+      ...details,
+    }));
   };
 
   const updateTitle = (newTitle: string) => {
