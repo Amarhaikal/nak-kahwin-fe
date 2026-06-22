@@ -1,11 +1,22 @@
 import { ThemedText } from "@/components/themed-text";
+import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useWeddingDetails } from "@/hooks/use-wedding-details";
 import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useState, useRef } from "react";
-import { Dimensions, Platform, StyleSheet, View, Pressable, ScrollView, ActivityIndicator, Alert } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import Animated, {
   Extrapolation,
   interpolate,
@@ -13,8 +24,6 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
 } from "react-native-reanimated";
-import * as ImagePicker from "expo-image-picker";
-import { IconSymbol } from "@/components/ui/icon-symbol";
 
 const { height } = Dimensions.get("window");
 
@@ -24,8 +33,8 @@ export default function MainScreen() {
   const accentColor = isDark ? "#A78BFA" : "#7C3AED"; // Theme-based purple accent
 
   const defaultGradientColors = isDark
-    ? ["#2E1065", "#1E1B4B", "#121212"] as const
-    : ["#EDE9FE", "#E0F2FE", "#F1F5F9"] as const;
+    ? (["#2E1065", "#1E1B4B", "#121212"] as const)
+    : (["#EDE9FE", "#E0F2FE", "#F1F5F9"] as const);
 
   const {
     activeEvent,
@@ -37,16 +46,23 @@ export default function MainScreen() {
     uploadEventPicture,
   } = useWeddingDetails();
 
-  const activeDetails = activeEvent === 'marriage' ? marriage : engagement;
-  const customImageUrl = activeEvent === 'marriage' ? plan?.marriageImageUrl : plan?.engagementImageUrl;
+  const activeDetails = activeEvent === "marriage" ? marriage : engagement;
+  const customImageUrl =
+    activeEvent === "marriage"
+      ? plan?.marriageImageUrl
+      : plan?.engagementImageUrl;
 
   const [isUploading, setIsUploading] = useState(false);
 
   const handleImagePick = async () => {
     try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Sorry, we need camera roll permissions to upload cover photos.');
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Denied",
+          "Sorry, we need camera roll permissions to upload cover photos.",
+        );
         return;
       }
 
@@ -61,13 +77,16 @@ export default function MainScreen() {
         setIsUploading(true);
         const error = await uploadEventPicture(selectedUri, activeEvent);
         if (error) {
-          Alert.alert('Upload Failed', error);
+          Alert.alert("Upload Failed", error);
         } else {
-          Alert.alert('Success', 'Cover image uploaded successfully.');
+          Alert.alert("Success", "Cover image uploaded successfully.");
         }
       }
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'An error occurred during image selection.');
+      Alert.alert(
+        "Error",
+        err.message || "An error occurred during image selection.",
+      );
     } finally {
       setIsUploading(false);
     }
@@ -98,10 +117,13 @@ export default function MainScreen() {
   });
 
   useEffect(() => {
-    const calculateTimeLeftForDate = (targetDateStr: string | null | undefined) => {
+    const calculateTimeLeftForDate = (
+      targetDateStr: string | null | undefined,
+    ) => {
       if (!targetDateStr) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
       const tDate = new Date(targetDateStr);
-      if (isNaN(tDate.getTime())) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+      if (isNaN(tDate.getTime()))
+        return { days: 0, hours: 0, minutes: 0, seconds: 0 };
       const difference = tDate.getTime() - new Date().getTime();
       if (difference <= 0) {
         return { days: 0, hours: 0, minutes: 0, seconds: 0 };
@@ -132,10 +154,10 @@ export default function MainScreen() {
     if (viewSize <= 0) return;
     const index = Math.round(contentOffset / viewSize);
     isInternalScroll.current = true;
-    if (index === 0 && activeEvent !== 'marriage') {
-      setActiveEvent('marriage');
-    } else if (index === 1 && activeEvent !== 'engagement') {
-      setActiveEvent('engagement');
+    if (index === 0 && activeEvent !== "marriage") {
+      setActiveEvent("marriage");
+    } else if (index === 1 && activeEvent !== "engagement") {
+      setActiveEvent("engagement");
     }
   };
 
@@ -146,7 +168,7 @@ export default function MainScreen() {
       return;
     }
     if (horizontalScrollRef.current) {
-      const page = activeEvent === 'marriage' ? 0 : 1;
+      const page = activeEvent === "marriage" ? 0 : 1;
       horizontalScrollRef.current.scrollTo({
         x: page * Dimensions.get("window").width,
         animated: true,
@@ -160,7 +182,8 @@ export default function MainScreen() {
 
   const formatDateString = (dateInput: Date | string | null | undefined) => {
     if (!dateInput) return "Not Scheduled";
-    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+    const date =
+      typeof dateInput === "string" ? new Date(dateInput) : dateInput;
     if (isNaN(date.getTime())) return "Not Scheduled";
     const options: Intl.DateTimeFormatOptions = {
       weekday: "long",
@@ -229,7 +252,9 @@ export default function MainScreen() {
             ) : (
               <>
                 <IconSymbol name="camera.fill" size={16} color={accentColor} />
-                <ThemedText style={styles.changeImageText}>Change Cover</ThemedText>
+                <ThemedText style={styles.changeImageText}>
+                  Change Cover
+                </ThemedText>
               </>
             )}
           </BlurView>
@@ -295,18 +320,44 @@ export default function MainScreen() {
                 {isUploading ? (
                   <View style={styles.uploadLoadingBox}>
                     <ActivityIndicator size="large" color={accentColor} />
-                    <ThemedText style={styles.uploadLoadingText}>Uploading...</ThemedText>
+                    <ThemedText style={styles.uploadLoadingText}>
+                      Uploading...
+                    </ThemedText>
                   </View>
                 ) : (
                   <>
-                    <View style={[styles.cameraIconContainer, { backgroundColor: isDark ? "rgba(167, 139, 250, 0.15)" : "rgba(124, 58, 237, 0.1)" }]}>
-                      <IconSymbol name="camera.fill" size={28} color={accentColor} />
+                    <View
+                      style={[
+                        styles.cameraIconContainer,
+                        {
+                          backgroundColor: isDark
+                            ? "rgba(167, 139, 250, 0.15)"
+                            : "rgba(124, 58, 237, 0.1)",
+                        },
+                      ]}
+                    >
+                      <IconSymbol
+                        name="camera.fill"
+                        size={28}
+                        color={accentColor}
+                      />
                     </View>
                     <ThemedText style={styles.uploadPlaceholderText}>
                       Upload Cover Photo
                     </ThemedText>
-                    <ThemedText style={[styles.uploadPlaceholderSubtext, { color: isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)" }]}>
-                      {activeEvent === 'marriage' ? 'Nikah Cover' : 'Tunang Cover'}
+                    <ThemedText
+                      style={[
+                        styles.uploadPlaceholderSubtext,
+                        {
+                          color: isDark
+                            ? "rgba(255, 255, 255, 0.5)"
+                            : "rgba(0, 0, 0, 0.5)",
+                        },
+                      ]}
+                    >
+                      {activeEvent === "marriage"
+                        ? "Nikah Cover"
+                        : "Tunang Cover"}
                     </ThemedText>
                   </>
                 )}
@@ -344,10 +395,17 @@ export default function MainScreen() {
                   },
                 ]}
               >
-                <ThemedText style={[styles.countdownHeader, { color: accentColor }]}>
+                <ThemedText
+                  style={[styles.countdownHeader, { color: accentColor }]}
+                >
                   Save the Date
                 </ThemedText>
-                <ThemedText style={[styles.title, { color: isDark ? "#ffffff" : "#1E1B4B" }]}>
+                <ThemedText
+                  style={[
+                    styles.title,
+                    { color: isDark ? "#ffffff" : "#1E1B4B" },
+                  ]}
+                >
                   {title}
                 </ThemedText>
                 <ThemedText style={[styles.dateText, { color: accentColor }]}>
@@ -357,46 +415,117 @@ export default function MainScreen() {
                 <View style={styles.timerContainer}>
                   {/* Days */}
                   <View style={styles.timeBlock}>
-                    <ThemedText style={[styles.timeNumber, { color: accentColor }]}>
+                    <ThemedText
+                      style={[styles.timeNumber, { color: accentColor }]}
+                    >
                       {formatNumber(marriageTimeLeft.days)}
                     </ThemedText>
-                    <ThemedText style={[styles.timeLabel, { color: isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)" }]}>
+                    <ThemedText
+                      style={[
+                        styles.timeLabel,
+                        {
+                          color: isDark
+                            ? "rgba(255, 255, 255, 0.5)"
+                            : "rgba(0, 0, 0, 0.5)",
+                        },
+                      ]}
+                    >
                       Days
                     </ThemedText>
                   </View>
 
-                  <View style={[styles.divider, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.1)" }]} />
+                  <View
+                    style={[
+                      styles.divider,
+                      {
+                        backgroundColor: isDark
+                          ? "rgba(255, 255, 255, 0.12)"
+                          : "rgba(0, 0, 0, 0.1)",
+                      },
+                    ]}
+                  />
 
                   {/* Hours */}
                   <View style={styles.timeBlock}>
-                    <ThemedText style={[styles.timeNumber, { color: accentColor }]}>
+                    <ThemedText
+                      style={[styles.timeNumber, { color: accentColor }]}
+                    >
                       {formatNumber(marriageTimeLeft.hours)}
                     </ThemedText>
-                    <ThemedText style={[styles.timeLabel, { color: isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)" }]}>
+                    <ThemedText
+                      style={[
+                        styles.timeLabel,
+                        {
+                          color: isDark
+                            ? "rgba(255, 255, 255, 0.5)"
+                            : "rgba(0, 0, 0, 0.5)",
+                        },
+                      ]}
+                    >
                       Hours
                     </ThemedText>
                   </View>
 
-                  <View style={[styles.divider, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.1)" }]} />
+                  <View
+                    style={[
+                      styles.divider,
+                      {
+                        backgroundColor: isDark
+                          ? "rgba(255, 255, 255, 0.12)"
+                          : "rgba(0, 0, 0, 0.1)",
+                      },
+                    ]}
+                  />
 
                   {/* Minutes */}
                   <View style={styles.timeBlock}>
-                    <ThemedText style={[styles.timeNumber, { color: accentColor }]}>
+                    <ThemedText
+                      style={[styles.timeNumber, { color: accentColor }]}
+                    >
                       {formatNumber(marriageTimeLeft.minutes)}
                     </ThemedText>
-                    <ThemedText style={[styles.timeLabel, { color: isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)" }]}>
+                    <ThemedText
+                      style={[
+                        styles.timeLabel,
+                        {
+                          color: isDark
+                            ? "rgba(255, 255, 255, 0.5)"
+                            : "rgba(0, 0, 0, 0.5)",
+                        },
+                      ]}
+                    >
                       Mins
                     </ThemedText>
                   </View>
 
-                  <View style={[styles.divider, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.1)" }]} />
+                  <View
+                    style={[
+                      styles.divider,
+                      {
+                        backgroundColor: isDark
+                          ? "rgba(255, 255, 255, 0.12)"
+                          : "rgba(0, 0, 0, 0.1)",
+                      },
+                    ]}
+                  />
 
                   {/* Seconds */}
                   <View style={styles.timeBlock}>
-                    <ThemedText style={[styles.timeNumber, { color: accentColor }]}>
+                    <ThemedText
+                      style={[styles.timeNumber, { color: accentColor }]}
+                    >
                       {formatNumber(marriageTimeLeft.seconds)}
                     </ThemedText>
-                    <ThemedText style={[styles.timeLabel, { color: isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)" }]}>
+                    <ThemedText
+                      style={[
+                        styles.timeLabel,
+                        {
+                          color: isDark
+                            ? "rgba(255, 255, 255, 0.5)"
+                            : "rgba(0, 0, 0, 0.5)",
+                        },
+                      ]}
+                    >
                       Secs
                     </ThemedText>
                   </View>
@@ -421,10 +550,17 @@ export default function MainScreen() {
                   },
                 ]}
               >
-                <ThemedText style={[styles.countdownHeader, { color: accentColor }]}>
+                <ThemedText
+                  style={[styles.countdownHeader, { color: accentColor }]}
+                >
                   Tunang Countdown
                 </ThemedText>
-                <ThemedText style={[styles.title, { color: isDark ? "#ffffff" : "#1E1B4B" }]}>
+                <ThemedText
+                  style={[
+                    styles.title,
+                    { color: isDark ? "#ffffff" : "#1E1B4B" },
+                  ]}
+                >
                   {title}
                 </ThemedText>
                 <ThemedText style={[styles.dateText, { color: accentColor }]}>
@@ -434,46 +570,117 @@ export default function MainScreen() {
                 <View style={styles.timerContainer}>
                   {/* Days */}
                   <View style={styles.timeBlock}>
-                    <ThemedText style={[styles.timeNumber, { color: accentColor }]}>
+                    <ThemedText
+                      style={[styles.timeNumber, { color: accentColor }]}
+                    >
                       {formatNumber(engagementTimeLeft.days)}
                     </ThemedText>
-                    <ThemedText style={[styles.timeLabel, { color: isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)" }]}>
+                    <ThemedText
+                      style={[
+                        styles.timeLabel,
+                        {
+                          color: isDark
+                            ? "rgba(255, 255, 255, 0.5)"
+                            : "rgba(0, 0, 0, 0.5)",
+                        },
+                      ]}
+                    >
                       Days
                     </ThemedText>
                   </View>
 
-                  <View style={[styles.divider, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.1)" }]} />
+                  <View
+                    style={[
+                      styles.divider,
+                      {
+                        backgroundColor: isDark
+                          ? "rgba(255, 255, 255, 0.12)"
+                          : "rgba(0, 0, 0, 0.1)",
+                      },
+                    ]}
+                  />
 
                   {/* Hours */}
                   <View style={styles.timeBlock}>
-                    <ThemedText style={[styles.timeNumber, { color: accentColor }]}>
+                    <ThemedText
+                      style={[styles.timeNumber, { color: accentColor }]}
+                    >
                       {formatNumber(engagementTimeLeft.hours)}
                     </ThemedText>
-                    <ThemedText style={[styles.timeLabel, { color: isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)" }]}>
+                    <ThemedText
+                      style={[
+                        styles.timeLabel,
+                        {
+                          color: isDark
+                            ? "rgba(255, 255, 255, 0.5)"
+                            : "rgba(0, 0, 0, 0.5)",
+                        },
+                      ]}
+                    >
                       Hours
                     </ThemedText>
                   </View>
 
-                  <View style={[styles.divider, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.1)" }]} />
+                  <View
+                    style={[
+                      styles.divider,
+                      {
+                        backgroundColor: isDark
+                          ? "rgba(255, 255, 255, 0.12)"
+                          : "rgba(0, 0, 0, 0.1)",
+                      },
+                    ]}
+                  />
 
                   {/* Minutes */}
                   <View style={styles.timeBlock}>
-                    <ThemedText style={[styles.timeNumber, { color: accentColor }]}>
+                    <ThemedText
+                      style={[styles.timeNumber, { color: accentColor }]}
+                    >
                       {formatNumber(engagementTimeLeft.minutes)}
                     </ThemedText>
-                    <ThemedText style={[styles.timeLabel, { color: isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)" }]}>
+                    <ThemedText
+                      style={[
+                        styles.timeLabel,
+                        {
+                          color: isDark
+                            ? "rgba(255, 255, 255, 0.5)"
+                            : "rgba(0, 0, 0, 0.5)",
+                        },
+                      ]}
+                    >
                       Mins
                     </ThemedText>
                   </View>
 
-                  <View style={[styles.divider, { backgroundColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.1)" }]} />
+                  <View
+                    style={[
+                      styles.divider,
+                      {
+                        backgroundColor: isDark
+                          ? "rgba(255, 255, 255, 0.12)"
+                          : "rgba(0, 0, 0, 0.1)",
+                      },
+                    ]}
+                  />
 
                   {/* Seconds */}
                   <View style={styles.timeBlock}>
-                    <ThemedText style={[styles.timeNumber, { color: accentColor }]}>
+                    <ThemedText
+                      style={[styles.timeNumber, { color: accentColor }]}
+                    >
                       {formatNumber(engagementTimeLeft.seconds)}
                     </ThemedText>
-                    <ThemedText style={[styles.timeLabel, { color: isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)" }]}>
+                    <ThemedText
+                      style={[
+                        styles.timeLabel,
+                        {
+                          color: isDark
+                            ? "rgba(255, 255, 255, 0.5)"
+                            : "rgba(0, 0, 0, 0.5)",
+                        },
+                      ]}
+                    >
                       Secs
                     </ThemedText>
                   </View>
@@ -489,18 +696,28 @@ export default function MainScreen() {
             style={[
               styles.dot,
               {
-                backgroundColor: activeEvent === 'marriage' ? accentColor : (isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(0, 0, 0, 0.15)'),
-                width: activeEvent === 'marriage' ? 16 : 6,
-              }
+                backgroundColor:
+                  activeEvent === "marriage"
+                    ? accentColor
+                    : isDark
+                      ? "rgba(255, 255, 255, 0.22)"
+                      : "rgba(0, 0, 0, 0.15)",
+                width: activeEvent === "marriage" ? 16 : 6,
+              },
             ]}
           />
           <View
             style={[
               styles.dot,
               {
-                backgroundColor: activeEvent === 'engagement' ? accentColor : (isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(0, 0, 0, 0.15)'),
-                width: activeEvent === 'engagement' ? 16 : 6,
-              }
+                backgroundColor:
+                  activeEvent === "engagement"
+                    ? accentColor
+                    : isDark
+                      ? "rgba(255, 255, 255, 0.22)"
+                      : "rgba(0, 0, 0, 0.15)",
+                width: activeEvent === "engagement" ? 16 : 6,
+              },
             ]}
           />
         </View>
@@ -513,8 +730,12 @@ export default function MainScreen() {
             style={[
               styles.infoCard,
               {
-                borderColor: isDark ? "rgba(167, 139, 250, 0.15)" : "rgba(124, 58, 237, 0.15)",
-                backgroundColor: isDark ? "rgba(42, 27, 61, 0.55)" : "rgba(237, 233, 254, 0.75)",
+                borderColor: isDark
+                  ? "rgba(167, 139, 250, 0.15)"
+                  : "rgba(124, 58, 237, 0.15)",
+                backgroundColor: isDark
+                  ? "rgba(42, 27, 61, 0.55)"
+                  : "rgba(237, 233, 254, 0.75)",
               },
             ]}
           >
@@ -526,7 +747,9 @@ export default function MainScreen() {
                 },
               ]}
             >
-              {activeEvent === 'marriage' ? 'Wedding Event' : 'Engagement Event'}
+              {activeEvent === "marriage"
+                ? "Wedding Event"
+                : "Engagement Event"}
             </ThemedText>
             <ThemedText
               style={[
@@ -536,14 +759,6 @@ export default function MainScreen() {
             >
               {activeDetails?.venue || "Not Scheduled"}
             </ThemedText>
-            <ThemedText
-              style={[
-                styles.infoSubText,
-                { color: isDark ? "#A78BFA" : "#7C3AED" },
-              ]}
-            >
-              {formatDateString(activeDetails?.date)}
-            </ThemedText>
           </BlurView>
 
           <BlurView
@@ -552,8 +767,12 @@ export default function MainScreen() {
             style={[
               styles.infoCard,
               {
-                borderColor: isDark ? "rgba(167, 139, 250, 0.15)" : "rgba(124, 58, 237, 0.15)",
-                backgroundColor: isDark ? "rgba(42, 27, 61, 0.55)" : "rgba(237, 233, 254, 0.75)",
+                borderColor: isDark
+                  ? "rgba(167, 139, 250, 0.15)"
+                  : "rgba(124, 58, 237, 0.15)",
+                backgroundColor: isDark
+                  ? "rgba(42, 27, 61, 0.55)"
+                  : "rgba(237, 233, 254, 0.75)",
               },
             ]}
           >
@@ -579,14 +798,19 @@ export default function MainScreen() {
               style={[
                 styles.progressBarBg,
                 {
-                  backgroundColor: isDark ? "rgba(255, 255, 255, 0.12)" : "#DDD6FE",
+                  backgroundColor: isDark
+                    ? "rgba(255, 255, 255, 0.12)"
+                    : "#DDD6FE",
                 },
               ]}
             >
               <View
                 style={[
                   styles.progressBarFill,
-                  { width: "56%", backgroundColor: isDark ? "#A78BFA" : "#7C3AED" },
+                  {
+                    width: "56%",
+                    backgroundColor: isDark ? "#A78BFA" : "#7C3AED",
+                  },
                 ]}
               />
             </View>
@@ -598,8 +822,12 @@ export default function MainScreen() {
             style={[
               styles.infoCard,
               {
-                borderColor: isDark ? "rgba(167, 139, 250, 0.15)" : "rgba(124, 58, 237, 0.15)",
-                backgroundColor: isDark ? "rgba(42, 27, 61, 0.55)" : "rgba(237, 233, 254, 0.75)",
+                borderColor: isDark
+                  ? "rgba(167, 139, 250, 0.15)"
+                  : "rgba(124, 58, 237, 0.15)",
+                backgroundColor: isDark
+                  ? "rgba(42, 27, 61, 0.55)"
+                  : "rgba(237, 233, 254, 0.75)",
               },
             ]}
           >
