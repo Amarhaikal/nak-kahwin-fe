@@ -7,14 +7,21 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useRef, useState } from "react";
+import * as Haptics from "expo-haptics";
+import { DatePicker } from "@/components/date-picker";
 import {
   ActivityIndicator,
   Alert,
+  Animated as RNAnimated,
   Dimensions,
+  KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
+  Text,
+  TextInput,
   View,
 } from "react-native";
 import Animated, {
@@ -44,6 +51,7 @@ export default function MainScreen() {
     title,
     plan,
     uploadEventPicture,
+    updateEventDetails,
   } = useWeddingDetails();
 
   const activeDetails = activeEvent === "marriage" ? marriage : engagement;
@@ -53,6 +61,62 @@ export default function MainScreen() {
       : plan?.engagementImageUrl;
 
   const [isUploading, setIsUploading] = useState(false);
+
+  // Edit Mode state
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDate, setEditDate] = useState(""); // YYYY-MM-DD
+  const [editVenue, setEditVenue] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const getYYYYMMDD = (dateStr: string | null | undefined): string => {
+    if (!dateStr) return "";
+    return dateStr.split("T")[0];
+  };
+
+  const handleEditPress = () => {
+    if (Platform.OS === "ios" || Platform.OS === "android") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    setEditTitle(title || "");
+    setEditDate(getYYYYMMDD(activeDetails?.date));
+    setEditVenue(activeDetails?.venue || "");
+    setIsEditModalVisible(true);
+  };
+
+  const handleSaveChanges = async () => {
+    setIsSaving(true);
+    try {
+      const payload: any = {
+        title: editTitle,
+      };
+
+      if (activeEvent === "marriage") {
+        payload.marriageVenue = editVenue;
+        payload.marriageDate = editDate || null;
+      } else {
+        payload.engagementVenue = editVenue;
+        payload.engagementDate = editDate || null;
+      }
+
+      const error = await updateEventDetails(payload);
+      if (error) {
+        Alert.alert("Update Failed", error);
+      } else {
+        if (Platform.OS === "ios" || Platform.OS === "android") {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+        setIsEditModalVisible(false);
+      }
+    } catch (err: any) {
+      Alert.alert(
+        "Error",
+        err.message || "An error occurred while saving details.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleImagePick = async () => {
     try {
@@ -232,35 +296,6 @@ export default function MainScreen() {
         { backgroundColor: isDark ? "#121212" : "#F1F5F9" },
       ]}
     >
-      {/* Floating Action Button to change the cover picture if already set */}
-      {customImageUrl && (
-        <Pressable
-          style={({ pressed }) => [
-            styles.changeImageButton,
-            { opacity: pressed ? 0.8 : 1 },
-          ]}
-          onPress={handleImagePick}
-          disabled={isUploading}
-        >
-          <BlurView
-            tint={isDark ? "dark" : "light"}
-            intensity={60}
-            style={styles.changeImageBlur}
-          >
-            {isUploading ? (
-              <ActivityIndicator size="small" color={accentColor} />
-            ) : (
-              <>
-                <IconSymbol name="camera.fill" size={16} color={accentColor} />
-                <ThemedText style={styles.changeImageText}>
-                  Change Cover
-                </ThemedText>
-              </>
-            )}
-          </BlurView>
-        </Pressable>
-      )}
-
       {/* 70% Height Animated Image Header with Gradient Fade */}
       <Animated.View
         style={[
@@ -332,7 +367,7 @@ export default function MainScreen() {
                         {
                           backgroundColor: isDark
                             ? "rgba(167, 139, 250, 0.15)"
-                            : "rgba(124, 58, 237, 0.1)",
+                            : "rgba(124, 58, 237, 0.15)",
                         },
                       ]}
                     >
@@ -395,6 +430,26 @@ export default function MainScreen() {
                   },
                 ]}
               >
+                {/* Floating Edit Button */}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.cardEditButton,
+                    { opacity: pressed ? 0.85 : 1 }
+                  ]}
+                  onPress={handleEditPress}
+                >
+                  <BlurView
+                    tint={isDark ? "dark" : "light"}
+                    intensity={60}
+                    style={styles.cardEditButtonBlur}
+                  >
+                    <IconSymbol
+                      name="pencil"
+                      size={14}
+                      color={accentColor}
+                    />
+                  </BlurView>
+                </Pressable>
                 <ThemedText
                   style={[styles.countdownHeader, { color: accentColor }]}
                 >
@@ -550,6 +605,26 @@ export default function MainScreen() {
                   },
                 ]}
               >
+                {/* Floating Edit Button */}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.cardEditButton,
+                    { opacity: pressed ? 0.85 : 1 }
+                  ]}
+                  onPress={handleEditPress}
+                >
+                  <BlurView
+                    tint={isDark ? "dark" : "light"}
+                    intensity={60}
+                    style={styles.cardEditButtonBlur}
+                  >
+                    <IconSymbol
+                      name="pencil"
+                      size={14}
+                      color={accentColor}
+                    />
+                  </BlurView>
+                </Pressable>
                 <ThemedText
                   style={[styles.countdownHeader, { color: accentColor }]}
                 >
@@ -860,6 +935,252 @@ export default function MainScreen() {
           </BlurView>
         </View>
       </Animated.ScrollView>
+
+      {/* Edit Event Details Modal */}
+      <Modal
+        visible={isEditModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsEditModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalOverlay}
+        >
+          <BlurView
+            tint={isDark ? "dark" : "light"}
+            intensity={95}
+            style={[
+              styles.modalContentContainer,
+              {
+                backgroundColor: isDark
+                  ? "rgba(18, 18, 18, 0.95)"
+                  : "rgba(255, 255, 255, 0.95)",
+              },
+            ]}
+          >
+            {/* Header */}
+            <View style={styles.modalHeader}>
+              <View>
+                <ThemedText style={styles.modalTitle}>
+                  {activeEvent === "marriage"
+                    ? "Edit Nikah Details"
+                    : "Edit Tunang Details"}
+                </ThemedText>
+                <ThemedText
+                  style={[
+                    styles.modalSubtitle,
+                    { color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)" }
+                  ]}
+                >
+                  Hold event card to edit anytime
+                </ThemedText>
+              </View>
+              <Pressable
+                onPress={() => setIsEditModalVisible(false)}
+                style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+              >
+                <IconSymbol
+                  name="xmark.circle.fill"
+                  size={24}
+                  color={isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)"}
+                />
+              </Pressable>
+            </View>
+
+            {/* Scrollable Form Content */}
+            <ScrollView
+              contentContainerStyle={styles.modalScrollContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {/* Cover Photo Customization in Modal */}
+              <View style={styles.modalFieldGroup}>
+                <ThemedText
+                  style={[
+                    styles.modalLabel,
+                    { color: isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)" }
+                  ]}
+                >
+                  Cover Picture
+                </ThemedText>
+                <View
+                  style={[
+                    styles.modalImageWrapper,
+                    {
+                      borderColor: isDark
+                        ? "rgba(255, 255, 255, 0.12)"
+                        : "rgba(0, 0, 0, 0.08)",
+                      backgroundColor: isDark
+                        ? "rgba(255, 255, 255, 0.05)"
+                        : "rgba(0, 0, 0, 0.03)",
+                    },
+                  ]}
+                >
+                  {customImageUrl ? (
+                    <Image
+                      source={{ uri: customImageUrl }}
+                      style={styles.modalImage}
+                      contentFit="cover"
+                    />
+                  ) : (
+                    <View style={styles.modalImagePlaceholder}>
+                      <LinearGradient
+                        colors={defaultGradientColors}
+                        style={StyleSheet.absoluteFillObject}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                      />
+                      <IconSymbol
+                        name="photo.fill"
+                        size={32}
+                        color={isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)"}
+                      />
+                    </View>
+                  )}
+
+                  {/* Upload overlay button */}
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.modalImageOverlayButton,
+                      { opacity: pressed ? 0.9 : 1 },
+                    ]}
+                    onPress={handleImagePick}
+                    disabled={isUploading}
+                  >
+                    <BlurView
+                      tint="dark"
+                      intensity={80}
+                      style={styles.modalImageOverlayBlur}
+                    >
+                      <IconSymbol
+                        name="camera.fill"
+                        size={14}
+                        color="#fff"
+                      />
+                      <Text style={styles.modalImageOverlayText}>
+                        Change Photo
+                      </Text>
+                    </BlurView>
+                  </Pressable>
+
+                  {/* Loading indicator during cover photo upload */}
+                  {isUploading && (
+                    <View style={styles.modalImageUploadingOverlay}>
+                      <ActivityIndicator size="small" color="#fff" />
+                    </View>
+                  )}
+                </View>
+              </View>
+
+              {/* Title Field */}
+              <View style={styles.modalFieldGroup}>
+                <ThemedText
+                  style={[
+                    styles.modalLabel,
+                    { color: isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)" }
+                  ]}
+                >
+                  Wedding Title
+                </ThemedText>
+                <TextInput
+                  style={[
+                    styles.modalInput,
+                    {
+                      backgroundColor: isDark ? "#2A2A2A" : "#F8FAFC",
+                      color: isDark ? "#fff" : "#1E1B4B",
+                      borderColor: isDark ? "#3A3A3A" : "#E2E8F0",
+                    },
+                  ]}
+                  value={editTitle}
+                  onChangeText={setEditTitle}
+                  placeholder="e.g. Amar & Syamimie"
+                  placeholderTextColor={isDark ? "#555" : "#94A3B8"}
+                  autoCapitalize="words"
+                />
+              </View>
+
+              {/* Date Field */}
+              <View style={styles.modalFieldGroup}>
+                <DatePicker
+                  value={editDate}
+                  onChange={setEditDate}
+                  placeholder="Select event date"
+                  label={activeEvent === "marriage" ? "Wedding (Nikah) Date" : "Engagement (Tunang) Date"}
+                />
+              </View>
+
+              {/* Venue Field */}
+              <View style={styles.modalFieldGroup}>
+                <ThemedText
+                  style={[
+                    styles.modalLabel,
+                    { color: isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)" }
+                  ]}
+                >
+                  Venue
+                </ThemedText>
+                <TextInput
+                  style={[
+                    styles.modalInput,
+                    {
+                      backgroundColor: isDark ? "#2A2A2A" : "#F8FAFC",
+                      color: isDark ? "#fff" : "#1E1B4B",
+                      borderColor: isDark ? "#3A3A3A" : "#E2E8F0",
+                    },
+                  ]}
+                  value={editVenue}
+                  onChangeText={setEditVenue}
+                  placeholder="e.g. Grand Ballroom"
+                  placeholderTextColor={isDark ? "#555" : "#94A3B8"}
+                />
+              </View>
+
+              {/* Actions Button Row */}
+              <View style={styles.modalButtonRow}>
+                <Pressable
+                  onPress={() => setIsEditModalVisible(false)}
+                  disabled={isSaving}
+                  style={[
+                    styles.modalSecondaryButton,
+                    { borderColor: isDark ? "#3A3A3A" : "#DDD6FE" },
+                  ]}
+                >
+                  <ThemedText
+                    style={[
+                      styles.modalSecondaryButtonText,
+                      { color: isDark ? "#A78BFA" : "#7C3AED" },
+                    ]}
+                  >
+                    Cancel
+                  </ThemedText>
+                </Pressable>
+
+                <Pressable
+                  onPress={handleSaveChanges}
+                  disabled={isSaving}
+                  style={styles.modalPrimaryButton}
+                >
+                  <LinearGradient
+                    colors={["#7C3AED", "#9F67FA"]}
+                    style={styles.modalPrimaryButtonGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    {isSaving ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={styles.modalPrimaryButtonText}>
+                        Save Changes
+                      </Text>
+                    )}
+                  </LinearGradient>
+                </Pressable>
+              </View>
+            </ScrollView>
+          </BlurView>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -1086,30 +1407,153 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
   },
-  changeImageButton: {
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "flex-end", // Slide up from bottom
+  },
+  modalContentContainer: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 24,
+    paddingBottom: Platform.OS === "ios" ? 40 : 24,
+    maxHeight: "90%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  modalSubtitle: {
+    fontSize: 13,
+    opacity: 0.5,
+    marginTop: 2,
+  },
+  modalScrollContent: {
+    gap: 20,
+  },
+  modalFieldGroup: {
+    gap: 8,
+  },
+  modalLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  modalInput: {
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    fontSize: 15,
+  },
+  modalImageSection: {
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  modalImageWrapper: {
+    width: "100%",
+    height: 150,
+    borderRadius: 16,
+    overflow: "hidden",
+    position: "relative",
+    borderWidth: 1,
+  },
+  modalImage: {
+    width: "100%",
+    height: "100%",
+  },
+  modalImagePlaceholder: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalImageOverlayButton: {
     position: "absolute",
-    top: Platform.OS === "ios" ? 60 : 40,
-    right: 20,
-    borderRadius: 20,
+    bottom: 12,
+    right: 12,
+    borderRadius: 16,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  modalImageOverlayBlur: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    gap: 6,
+  },
+  modalImageOverlayText: {
+    fontSize: 12,
+    color: "#fff",
+    fontWeight: "600",
+  },
+  modalImageUploadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalButtonRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 12,
+  },
+  modalPrimaryButton: {
+    flex: 1,
+    borderRadius: 14,
+    overflow: "hidden",
+  },
+  modalPrimaryButtonGradient: {
+    height: 50,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalPrimaryButtonText: {
+    color: "#ffffff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  modalSecondaryButton: {
+    flex: 1,
+    height: 50,
+    borderRadius: 14,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalSecondaryButtonText: {
+    fontWeight: "600",
+    fontSize: 15,
+  },
+  cardEditButton: {
+    position: "absolute",
+    top: 16,
+    right: 16,
+    borderRadius: 18,
     overflow: "hidden",
     zIndex: 10,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.15)",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  changeImageBlur: {
-    flexDirection: "row",
+  cardEditButtonBlur: {
+    width: 32,
+    height: 32,
     alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    gap: 6,
-  },
-  changeImageText: {
-    fontSize: 12,
-    fontWeight: "bold",
+    justifyContent: "center",
   },
 });
