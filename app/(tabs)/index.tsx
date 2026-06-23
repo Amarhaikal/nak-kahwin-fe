@@ -7,6 +7,7 @@ import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
+import * as ImageManipulator from "expo-image-manipulator";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -136,8 +137,17 @@ export default function MainScreen() {
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        const selectedUri = result.assets[0].uri;
         setIsUploading(true);
+        
+        // Convert image (handles HEIC on iOS) to standard JPEG before upload
+        const rawUri = result.assets[0].uri;
+        const manipResult = await ImageManipulator.manipulateAsync(
+          rawUri,
+          [],
+          { format: ImageManipulator.SaveFormat.JPEG, compress: 0.8 }
+        );
+        const selectedUri = manipResult.uri;
+
         const error = await uploadEventPicture(selectedUri, activeEvent);
         if (error) {
           Alert.alert("Upload Failed", error);
