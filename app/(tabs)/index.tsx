@@ -1,18 +1,17 @@
+import { DatePicker } from "@/components/date-picker";
 import { ThemedText } from "@/components/themed-text";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useWeddingDetails } from "@/hooks/use-wedding-details";
 import { BlurView } from "expo-blur";
+import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useRef, useState } from "react";
-import * as Haptics from "expo-haptics";
-import { DatePicker } from "@/components/date-picker";
 import {
   ActivityIndicator,
   Alert,
-  Animated as RNAnimated,
   Dimensions,
   KeyboardAvoidingView,
   Modal,
@@ -22,7 +21,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  View,
+  View
 } from "react-native";
 import Animated, {
   Extrapolation,
@@ -434,7 +433,7 @@ export default function MainScreen() {
                 <Pressable
                   style={({ pressed }) => [
                     styles.cardEditButton,
-                    { opacity: pressed ? 0.85 : 1 }
+                    { opacity: pressed ? 0.85 : 1 },
                   ]}
                   onPress={handleEditPress}
                 >
@@ -443,17 +442,13 @@ export default function MainScreen() {
                     intensity={60}
                     style={styles.cardEditButtonBlur}
                   >
-                    <IconSymbol
-                      name="pencil"
-                      size={14}
-                      color={accentColor}
-                    />
+                    <IconSymbol name="pencil" size={14} color={accentColor} />
                   </BlurView>
                 </Pressable>
                 <ThemedText
                   style={[styles.countdownHeader, { color: accentColor }]}
                 >
-                  Save the Date
+                  Nikah Countdown
                 </ThemedText>
                 <ThemedText
                   style={[
@@ -609,7 +604,7 @@ export default function MainScreen() {
                 <Pressable
                   style={({ pressed }) => [
                     styles.cardEditButton,
-                    { opacity: pressed ? 0.85 : 1 }
+                    { opacity: pressed ? 0.85 : 1 },
                   ]}
                   onPress={handleEditPress}
                 >
@@ -618,11 +613,7 @@ export default function MainScreen() {
                     intensity={60}
                     style={styles.cardEditButtonBlur}
                   >
-                    <IconSymbol
-                      name="pencil"
-                      size={14}
-                      color={accentColor}
-                    />
+                    <IconSymbol name="pencil" size={14} color={accentColor} />
                   </BlurView>
                 </Pressable>
                 <ThemedText
@@ -970,7 +961,11 @@ export default function MainScreen() {
                 <ThemedText
                   style={[
                     styles.modalSubtitle,
-                    { color: isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)" }
+                    {
+                      color: isDark
+                        ? "rgba(255,255,255,0.5)"
+                        : "rgba(0,0,0,0.5)",
+                    },
                   ]}
                 >
                   Hold event card to edit anytime
@@ -999,7 +994,11 @@ export default function MainScreen() {
                 <ThemedText
                   style={[
                     styles.modalLabel,
-                    { color: isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)" }
+                    {
+                      color: isDark
+                        ? "rgba(255,255,255,0.6)"
+                        : "rgba(0,0,0,0.6)",
+                    },
                   ]}
                 >
                   Cover Picture
@@ -1034,7 +1033,9 @@ export default function MainScreen() {
                       <IconSymbol
                         name="photo.fill"
                         size={32}
-                        color={isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)"}
+                        color={
+                          isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)"
+                        }
                       />
                     </View>
                   )}
@@ -1053,11 +1054,7 @@ export default function MainScreen() {
                       intensity={80}
                       style={styles.modalImageOverlayBlur}
                     >
-                      <IconSymbol
-                        name="camera.fill"
-                        size={14}
-                        color="#fff"
-                      />
+                      <IconSymbol name="camera.fill" size={14} color="#fff" />
                       <Text style={styles.modalImageOverlayText}>
                         Change Photo
                       </Text>
@@ -1078,7 +1075,11 @@ export default function MainScreen() {
                 <ThemedText
                   style={[
                     styles.modalLabel,
-                    { color: isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)" }
+                    {
+                      color: isDark
+                        ? "rgba(255,255,255,0.6)"
+                        : "rgba(0,0,0,0.6)",
+                    },
                   ]}
                 >
                   Wedding Title
@@ -1106,7 +1107,11 @@ export default function MainScreen() {
                   value={editDate}
                   onChange={setEditDate}
                   placeholder="Select event date"
-                  label={activeEvent === "marriage" ? "Wedding (Nikah) Date" : "Engagement (Tunang) Date"}
+                  label={
+                    activeEvent === "marriage"
+                      ? "Wedding (Nikah) Date"
+                      : "Engagement (Tunang) Date"
+                  }
                 />
               </View>
 
@@ -1115,7 +1120,11 @@ export default function MainScreen() {
                 <ThemedText
                   style={[
                     styles.modalLabel,
-                    { color: isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)" }
+                    {
+                      color: isDark
+                        ? "rgba(255,255,255,0.6)"
+                        : "rgba(0,0,0,0.6)",
+                    },
                   ]}
                 >
                   Venue
