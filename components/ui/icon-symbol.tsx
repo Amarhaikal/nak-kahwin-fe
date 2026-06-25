@@ -40,6 +40,8 @@ const MAPPING = {
   'xmark': 'close',
   'rectangle.portrait.and.arrow.right': 'exit-to-app',
   'camera.fill': 'photo-camera',
+  'arrow.up': 'arrow-upward',
+  'arrow.down': 'arrow-downward',
 } as IconMapping;
 
 /**

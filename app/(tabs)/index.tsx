@@ -1102,13 +1102,24 @@ export default function MainScreen() {
                       color: isDark ? "#fff" : "#1E1B4B",
                       borderColor: isDark ? "#3A3A3A" : "#E2E8F0",
                     },
+                    activeEvent !== "marriage" && {
+                      backgroundColor: isDark ? "#1A1A1A" : "#E2E8F0",
+                      color: isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)",
+                      borderColor: isDark ? "#222" : "#CBD5E1",
+                    }
                   ]}
                   value={editTitle}
                   onChangeText={setEditTitle}
+                  editable={activeEvent === "marriage"}
                   placeholder="e.g. Amar & Syamimie"
                   placeholderTextColor={isDark ? "#555" : "#94A3B8"}
                   autoCapitalize="words"
                 />
+                {activeEvent !== "marriage" && (
+                  <Text style={[styles.disabledHintText, { color: isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.4)" }]}>
+                    * Wedding title can only be edited under Nikah details.
+                  </Text>
+                )}
               </View>
 
               {/* Date Field */}
@@ -1574,5 +1585,10 @@ const styles = StyleSheet.create({
     height: 32,
     alignItems: "center",
     justifyContent: "center",
+  },
+  disabledHintText: {
+    fontSize: 11,
+    fontStyle: "italic",
+    marginTop: 4,
   },
 });
