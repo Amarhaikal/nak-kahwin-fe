@@ -346,7 +346,7 @@ export default function SavingsScreen() {
             }]}
           >
             <ThemedText style={styles.createGoalToggleText}>
-              {showGoalForm ? 'CLOSE NEW POOL FORM' : 'CREATE A SAVINGS POOL'}
+              {showGoalForm ? 'CLOSE ADD FORM' : 'ADD SAVINGS MONTH / YEAR'}
             </ThemedText>
             <IconSymbol name={showGoalForm ? 'chevron.up' : 'plus.circle.fill'} size={18} color={accentColor} />
           </Pressable>
@@ -359,7 +359,7 @@ export default function SavingsScreen() {
             }]}>
               <View style={styles.formRow}>
                 <View style={styles.monthBox}>
-                  <ThemedText style={styles.fieldLabel}>Pool Title</ThemedText>
+                  <ThemedText style={styles.fieldLabel}>Target Period / Year</ThemedText>
                   <TextInput
                     style={[styles.savingTextInput, {
                       backgroundColor: isDarkMode ? '#2A2A2A' : '#F1F5F9',
@@ -368,7 +368,7 @@ export default function SavingsScreen() {
                     }]}
                     value={newGoalTitle}
                     onChangeText={setNewGoalTitle}
-                    placeholder="e.g. Catering Savings"
+                    placeholder="e.g. Jun 2026, 2025"
                     placeholderTextColor={isDarkMode ? '#666666' : '#94A3B8'}
                   />
                 </View>
@@ -408,7 +408,7 @@ export default function SavingsScreen() {
         {isLoading && !refreshing ? (
           <View style={styles.centerContainer}>
             <ActivityIndicator size="large" color={accentColor} />
-            <ThemedText style={styles.loadingText}>Loading savings pools...</ThemedText>
+            <ThemedText style={styles.loadingText}>Loading savings goals...</ThemedText>
           </View>
         ) : error ? (
           <View style={styles.centerContainer}>
@@ -419,9 +419,9 @@ export default function SavingsScreen() {
             </Pressable>
           </View>
         ) : (
-          /* Savings Pools Cards */
+          /* Savings Goals Cards */
           <View style={styles.savingsListSection}>
-            <ThemedText style={styles.sectionTitle}>ACTIVE SAVINGS POOLS</ThemedText>
+            <ThemedText style={styles.sectionTitle}>MONTHLY TARGETS & GOALS</ThemedText>
             
             {goals.length === 0 ? (
               <View style={[styles.emptyCard, {
@@ -429,7 +429,7 @@ export default function SavingsScreen() {
                 borderColor: isDarkMode ? '#2D3748' : '#E2E8F0',
               }]}>
                 <IconSymbol name="archivebox.fill" size={24} color={isDarkMode ? '#444' : '#ccc'} />
-                <ThemedText style={styles.emptyText}>No savings pools set up yet.</ThemedText>
+                <ThemedText style={styles.emptyText}>No savings targets set up yet.</ThemedText>
               </View>
             ) : (
               goals.map((goal) => {
