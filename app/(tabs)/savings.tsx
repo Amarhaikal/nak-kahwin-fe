@@ -251,48 +251,49 @@ export default function SavingsScreen() {
 
         {/* Core summary dashboard */}
         <View style={styles.dashboardContainer}>
-          <View style={[styles.dashboardCard, {
-            backgroundColor: isDarkMode ? '#1E1E1E' : '#ffffff',
-            borderColor: isDarkMode ? '#2D3748' : '#E2E8F0',
-          }]}>
-            
-            {/* Total Savings Field */}
-            <View style={styles.totalSavingsRow}>
-              <View>
-                <ThemedText style={styles.summaryLabel}>TOTAL ACCUMULATED SAVINGS</ThemedText>
-                <ThemedText style={[styles.savingsText, { color: accentColor }]}>
-                  {formatCurrency(totalSavings)}
-                </ThemedText>
+          {/* Bank Account-style Card */}
+          <LinearGradient
+            colors={isDarkMode ? ['#1E1B4B', '#0F0E17'] : ['#4C1D95', '#6D28D9']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.bankCard}
+          >
+            {/* Overlay reflection shine for debit card realism */}
+            <View style={styles.cardShine} />
+
+            {/* Bank Card Balance */}
+            <View style={[styles.bankCardBalanceContainer, { marginTop: 0 }]}>
+              <View style={styles.balanceCol}>
+                <ThemedText style={styles.bankCardBalanceLabel}>AVAILABLE BALANCE</ThemedText>
+                <View style={styles.balanceRow}>
+                  <ThemedText style={styles.bankCardBalanceText}>
+                    {formatCurrency(totalSavings)}
+                  </ThemedText>
+                </View>
               </View>
-              <View style={styles.remainingTargetBox}>
-                <ThemedText style={styles.remainingLabel}>GOAL REMAINING</ThemedText>
-                <ThemedText style={[styles.remainingVal, { color: isDarkMode ? '#E2E8F0' : '#1E1B4B' }]}>
+            </View>
+
+            {/* Bank Card Footer details */}
+            <View style={styles.bankCardFooter}>
+              <View>
+                <ThemedText style={styles.bankCardFooterLabel}>GOAL REMAINING</ThemedText>
+                <ThemedText style={styles.bankCardFooterVal}>
                   {formatCurrency(remainingTarget)}
                 </ThemedText>
               </View>
-            </View>
-
-            <View style={styles.divider} />
-
-            {/* Split Savings Row */}
-            <View style={styles.splitSavingsContainer}>
-              <View style={styles.splitBox}>
-                <ThemedText style={styles.splitLabel}>YOUR SAVINGS (GROOM)</ThemedText>
-                <ThemedText style={[styles.splitVal, { color: purpleAccent }]}>
-                  {formatCurrency(groomSavings)}
-                </ThemedText>
-              </View>
-              <View style={styles.summaryBoxDivider} />
-              <View style={styles.splitBox}>
-                <ThemedText style={styles.splitLabel}>PARTNER'S SAVINGS (BRIDE)</ThemedText>
-                <ThemedText style={[styles.splitVal, { color: '#EC4899' }]}>
-                  {formatCurrency(brideSavings)}
-                </ThemedText>
+              <View style={{ alignItems: 'flex-end' }}>
+                <ThemedText style={styles.bankCardFooterLabel}>TARGET BUDGET</ThemedText>
+                <ThemedText style={styles.bankCardFooterVal}>{formatCurrency(budget.total)}</ThemedText>
               </View>
             </View>
+          </LinearGradient>
 
-            <View style={styles.divider} />
-
+          {/* Analytics progress card */}
+          <View style={[styles.dashboardCard, {
+            backgroundColor: isDarkMode ? '#1E1E1E' : '#ffffff',
+            borderColor: isDarkMode ? '#2D3748' : '#E2E8F0',
+            marginTop: 16,
+          }]}>
             {/* Spent Coverage Meter */}
             <View style={styles.meterWrapper}>
               <View style={styles.meterLabelRow}>
@@ -332,7 +333,6 @@ export default function SavingsScreen() {
                 RM {totalSavings.toLocaleString(undefined, { maximumFractionDigits: 0 })} saved out of RM {budget.total.toLocaleString(undefined, { maximumFractionDigits: 0 })} budget target.
               </ThemedText>
             </View>
-
           </View>
         </View>
 
@@ -649,36 +649,95 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 3,
   },
-  totalSavingsRow: {
+  bankCard: {
+    borderRadius: 22,
+    padding: 22,
+    overflow: 'hidden',
+    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  cardShine: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '50%',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    transform: [{ skewY: '-15deg' }, { translateY: -30 }],
+  },
+  bankCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  bankCardLabel: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: 'rgba(255, 255, 255, 0.65)',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  bankCardNumber: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.85)',
+    marginTop: 3,
+    letterSpacing: 1,
+  },
+  bankCardBalanceContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    width: '100%',
+    marginTop: 22,
   },
-  summaryLabel: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-    opacity: 0.5,
+  balanceCol: {
+    flex: 1,
   },
-  savingsText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginTop: 4,
-  },
-  remainingTargetBox: {
-    alignItems: 'flex-end',
-  },
-  remainingLabel: {
+  bankCardBalanceLabel: {
     fontSize: 9,
     fontWeight: 'bold',
-    letterSpacing: 0.8,
-    opacity: 0.5,
+    color: 'rgba(255, 255, 255, 0.55)',
+    letterSpacing: 1,
   },
-  remainingVal: {
-    fontSize: 15,
-    fontWeight: 'bold',
+  balanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     marginTop: 4,
+  },
+  bankCardBalanceText: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  eyeBtn: {
+    padding: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bankCardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 22,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    paddingTop: 14,
+  },
+  bankCardFooterLabel: {
+    fontSize: 8,
+    fontWeight: 'bold',
+    color: 'rgba(255, 255, 255, 0.5)',
+    letterSpacing: 0.8,
+  },
+  bankCardFooterVal: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginTop: 2,
   },
   divider: {
     height: 1,
@@ -983,33 +1042,6 @@ const styles = StyleSheet.create({
   },
   rowDivider: {
     height: 1,
-  },
-  splitSavingsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    paddingVertical: 4,
-  },
-  splitBox: {
-    flex: 1,
-  },
-  splitLabel: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    letterSpacing: 0.8,
-    opacity: 0.5,
-    marginBottom: 4,
-  },
-  splitVal: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  summaryBoxDivider: {
-    width: 1,
-    height: 32,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    marginHorizontal: 16,
   },
   badgeContainer: {
     paddingHorizontal: 5,

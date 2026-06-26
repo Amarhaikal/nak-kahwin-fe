@@ -42,6 +42,8 @@ const MAPPING = {
   'camera.fill': 'photo-camera',
   'arrow.up': 'arrow-upward',
   'arrow.down': 'arrow-downward',
+  'eye.fill': 'visibility',
+  'eye.slash.fill': 'visibility-off',
 } as IconMapping;
 
 /**
