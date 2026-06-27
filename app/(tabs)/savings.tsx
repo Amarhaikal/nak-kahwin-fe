@@ -144,6 +144,26 @@ export default function SavingsScreen() {
     }
   };
 
+  const parsePeriodToDate = (periodStr: string): number => {
+    const timestamp = Date.parse(periodStr);
+    if (!isNaN(timestamp)) {
+      return timestamp;
+    }
+    const yearMatch = periodStr.match(/\b\d{4}\b/);
+    if (yearMatch) {
+      const year = parseInt(yearMatch[0], 10);
+      const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+      const lowerStr = periodStr.toLowerCase();
+      for (let i = 0; i < months.length; i++) {
+        if (lowerStr.includes(months[i])) {
+          return new Date(year, i, 1).getTime();
+        }
+      }
+      return new Date(year, 0, 1).getTime();
+    }
+    return 0;
+  };
+
   // Deleted handleAddSaving
 
   const handleDeleteSaving = async (savingId: string) => {
@@ -415,14 +435,23 @@ export default function SavingsScreen() {
                   ]}
                 >
                   {(() => {
-                    const filtered = savings.filter((item) => {
-                      if (selectedFilter === "all") return true;
-                      if (selectedFilter === "you")
-                        return item.contributorRole === user?.role;
-                      if (selectedFilter === "partner")
-                        return item.contributorRole !== user?.role;
-                      return true;
-                    });
+                    const filtered = savings
+                      .filter((item) => {
+                        if (selectedFilter === "all") return true;
+                        if (selectedFilter === "you")
+                          return item.contributorRole === user?.role;
+                        if (selectedFilter === "partner")
+                          return item.contributorRole !== user?.role;
+                        return true;
+                      })
+                      .sort((a, b) => {
+                        const posA = a.position ?? 0;
+                        const posB = b.position ?? 0;
+                        if (posA !== posB) return posA - posB;
+                        const dateA = parsePeriodToDate(a.month) || new Date(a.createdAt).getTime();
+                        const dateB = parsePeriodToDate(b.month) || new Date(b.createdAt).getTime();
+                        return dateB - dateA;
+                      });
 
                     if (filtered.length === 0) {
                       return (

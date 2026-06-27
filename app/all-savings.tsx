@@ -4,7 +4,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { getToken, useAuth } from "@/hooks/use-auth";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { deleteSaving, getSavings, SavingEntry } from "@/services/savings-service";
+import { deleteSaving, getSavings, SavingEntry, reorderSavings } from "@/services/savings-service";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -33,6 +33,7 @@ export default function AllSavingsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<"all" | "you" | "partner">("all");
+  const [reorderMode, setReorderMode] = useState(false);
 
   const fetchSavingsData = async (showLoading = true) => {
     if (showLoading) setIsLoading(true);
@@ -100,6 +101,59 @@ export default function AllSavingsScreen() {
       return new Date(year, 0, 1).getTime();
     }
     return 0;
+  };
+
+  const handleMoveSaving = async (itemIdx: number, direction: "up" | "down") => {
+    const filtered = savings
+      .filter((item) => {
+        if (selectedFilter === "all") return true;
+        if (selectedFilter === "you") return item.contributorRole === user?.role;
+        if (selectedFilter === "partner") return item.contributorRole !== user?.role;
+        return true;
+      })
+      .sort((a, b) => {
+        const posA = a.position ?? 0;
+        const posB = b.position ?? 0;
+        if (posA !== posB) return posA - posB;
+        const dateA = parsePeriodToDate(a.month) || new Date(a.createdAt).getTime();
+        const dateB = parsePeriodToDate(b.month) || new Date(b.createdAt).getTime();
+        return dateB - dateA;
+      });
+
+    const targetIdx = direction === "up" ? itemIdx - 1 : itemIdx + 1;
+    if (targetIdx < 0 || targetIdx >= filtered.length) return;
+
+    // Swap
+    const updatedFiltered = [...filtered];
+    const temp = updatedFiltered[itemIdx];
+    updatedFiltered[itemIdx] = updatedFiltered[targetIdx];
+    updatedFiltered[targetIdx] = temp;
+
+    // Map positions back to all savings
+    const updatedSavings = savings.map((saving) => {
+      const matchIdx = updatedFiltered.findIndex((f) => f.id === saving.id);
+      if (matchIdx !== -1) {
+        return { ...saving, position: matchIdx };
+      }
+      return saving;
+    });
+
+    setSavings(updatedSavings);
+
+    try {
+      const token = await getToken();
+      if (!token) return;
+
+      const orderedIds = updatedFiltered.map((f) => f.id);
+      const { error: err } = await reorderSavings(orderedIds, token);
+      if (err) {
+        alert(err);
+        fetchSavingsData(false);
+      }
+    } catch (error: any) {
+      alert(error.message ?? "Error reordering savings.");
+      fetchSavingsData(false);
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -274,15 +328,38 @@ export default function AllSavingsScreen() {
                 </Pressable>
               </View>
             ) : (
-              <View
-                style={[
-                  styles.listCard,
-                  {
-                    backgroundColor: isDarkMode ? "#1E1E1E" : "#ffffff",
-                    borderColor: isDarkMode ? "#2D3748" : "#E2E8F0",
-                  },
-                ]}
-              >
+              <>
+                {/* Section Header with Reorder Toggle */}
+                <View style={styles.listHeaderRow}>
+                  <ThemedText style={styles.sectionTitle}>SAVINGS RECORD HISTORY</ThemedText>
+                  
+                  <Pressable
+                    onPress={() => setReorderMode(!reorderMode)}
+                    style={[
+                      styles.reorderPill,
+                      reorderMode && { backgroundColor: accentColor + "20", borderColor: accentColor }
+                    ]}
+                  >
+                    <IconSymbol 
+                      name="list.bullet" 
+                      size={12} 
+                      color={reorderMode ? accentColor : (isDarkMode ? "#A0AEC0" : "#475569")} 
+                    />
+                    <ThemedText style={[styles.reorderPillText, { color: reorderMode ? accentColor : (isDarkMode ? "#A0AEC0" : "#475569") }]}>
+                      {reorderMode ? "Done" : "Reorder"}
+                    </ThemedText>
+                  </Pressable>
+                </View>
+
+                <View
+                  style={[
+                    styles.listCard,
+                    {
+                      backgroundColor: isDarkMode ? "#1E1E1E" : "#ffffff",
+                      borderColor: isDarkMode ? "#2D3748" : "#E2E8F0",
+                    },
+                  ]}
+                >
                 {(() => {
                   const filtered = savings
                     .filter((item) => {
@@ -294,6 +371,9 @@ export default function AllSavingsScreen() {
                       return true;
                     })
                     .sort((a, b) => {
+                      const posA = a.position ?? 0;
+                      const posB = b.position ?? 0;
+                      if (posA !== posB) return posA - posB;
                       const dateA = parsePeriodToDate(a.month) || new Date(a.createdAt).getTime();
                       const dateB = parsePeriodToDate(b.month) || new Date(b.createdAt).getTime();
                       return dateB - dateA;
@@ -330,27 +410,48 @@ export default function AllSavingsScreen() {
                           </ThemedText>
                         </View>
                         <View style={styles.rowRight}>
-                          <ThemedText
-                            style={[
-                              styles.rowAmount,
-                              { color: isDarkMode ? "#FFFFFF" : "#1E1B4B" },
-                            ]}
-                          >
-                            {formatCurrency(Number(item.amount))}
-                          </ThemedText>
-
-                          {!isMyContribution && (
-                            <View style={styles.lockIconWrapper}>
-                              <IconSymbol
-                                name="lock.fill"
-                                size={14}
-                                color={
-                                  isDarkMode
-                                    ? "rgba(255,255,255,0.25)"
-                                    : "rgba(0,0,0,0.25)"
-                                }
-                              />
+                          {reorderMode ? (
+                            <View style={styles.itemReorderControls}>
+                              <Pressable
+                                onPress={() => handleMoveSaving(index, "up")}
+                                disabled={index === 0}
+                                style={[styles.itemReorderArrow, index === 0 && { opacity: 0.2 }]}
+                              >
+                                <IconSymbol name="chevron.up" size={14} color={accentColor} />
+                              </Pressable>
+                              <Pressable
+                                onPress={() => handleMoveSaving(index, "down")}
+                                disabled={index === filtered.length - 1}
+                                style={[styles.itemReorderArrow, index === filtered.length - 1 && { opacity: 0.2 }]}
+                              >
+                                <IconSymbol name="chevron.down" size={14} color={accentColor} />
+                              </Pressable>
                             </View>
+                          ) : (
+                            <>
+                              <ThemedText
+                                style={[
+                                  styles.rowAmount,
+                                  { color: isDarkMode ? "#FFFFFF" : "#1E1B4B" },
+                                ]}
+                              >
+                                {formatCurrency(Number(item.amount))}
+                              </ThemedText>
+
+                              {!isMyContribution && (
+                                <View style={styles.lockIconWrapper}>
+                                  <IconSymbol
+                                    name="lock.fill"
+                                    size={14}
+                                    color={
+                                      isDarkMode
+                                        ? "rgba(255,255,255,0.25)"
+                                        : "rgba(0,0,0,0.25)"
+                                    }
+                                  />
+                                </View>
+                              )}
+                            </>
                           )}
                         </View>
                       </View>
@@ -358,7 +459,7 @@ export default function AllSavingsScreen() {
 
                     return (
                       <View key={item.id}>
-                        {isMyContribution ? (
+                        {isMyContribution && !reorderMode ? (
                           <Swipeable
                             renderRightActions={() =>
                               renderRightActions(item.id)
@@ -387,7 +488,8 @@ export default function AllSavingsScreen() {
                     );
                   });
                 })()}
-              </View>
+                </View>
+              </>
             )}
           </View>
         </ScrollView>
@@ -520,5 +622,45 @@ const styles = StyleSheet.create({
   },
   activeFilterTabText: {
     fontWeight: "bold",
+  },
+  listHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    opacity: 0.5,
+    letterSpacing: 1,
+  },
+  reorderPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "transparent",
+  },
+  reorderPillText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  itemReorderControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  itemReorderArrow: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(167, 139, 250, 0.1)",
   },
 });
