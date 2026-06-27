@@ -283,7 +283,7 @@ export default function SavingsScreen() {
                   const isMyContribution = item.contributorRole === user?.role;
                   
                   const rowContent = (
-                    <View style={styles.savingRow}>
+                    <View style={[styles.savingRow, { backgroundColor: isDarkMode ? '#1E1E1E' : '#ffffff' }]}>
                       <View style={styles.rowLeft}>
                         <ThemedText style={styles.rowMonth}>{item.month}</ThemedText>
                         
@@ -691,7 +691,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: 60,
     borderRadius: 12,
-    marginVertical: 4,
-    marginLeft: 12,
+    height: '100%',
   },
 });
