@@ -9,6 +9,7 @@ import { Colors } from '@/constants/theme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getSavings, addSaving, deleteSaving, SavingEntry } from '@/services/savings-service';
+import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
 
 const { width } = Dimensions.get('window');
 
@@ -126,8 +127,20 @@ export default function SavingsScreen() {
     return `RM ${amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
   };
 
+  const renderRightActions = (savingId: string) => {
+    return (
+      <Pressable
+        onPress={() => handleDeleteSaving(savingId)}
+        style={styles.swipeDeleteButton}
+      >
+        <IconSymbol name="trash.fill" size={18} color="#ffffff" />
+      </Pressable>
+    );
+  };
+
   return (
-    <ThemedView style={styles.container}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemedView style={styles.container}>
       <ScrollView 
         contentContainerStyle={styles.scrollContainer} 
         showsVerticalScrollIndicator={false}
@@ -268,52 +281,52 @@ export default function SavingsScreen() {
               ) : (
                 savings.map((item, index) => {
                   const isMyContribution = item.contributorRole === user?.role;
-                  return (
-                    <View key={item.id}>
-                      <View style={styles.savingRow}>
-                        <View style={styles.rowLeft}>
-                          <View style={[styles.iconWrapper, { backgroundColor: isDarkMode ? accentColor + '20' : accentColor + '10' }]}>
-                            <IconSymbol name="dollarsign.circle.fill" size={16} color={accentColor} />
-                          </View>
-                          <ThemedText style={styles.rowMonth}>{item.month}</ThemedText>
-                          
-                          {/* Partner Tag Badge */}
-                          <View style={[
-                            styles.badgeContainer,
-                            { backgroundColor: isMyContribution ? (isDarkMode ? 'rgba(167, 139, 250, 0.15)' : '#ECE9FC') : (isDarkMode ? 'rgba(236, 72, 153, 0.15)' : '#FCE7F3') }
+                  
+                  const rowContent = (
+                    <View style={styles.savingRow}>
+                      <View style={styles.rowLeft}>
+                        <ThemedText style={styles.rowMonth}>{item.month}</ThemedText>
+                        
+                        {/* Partner Tag Badge */}
+                        <View style={[
+                          styles.badgeContainer,
+                          { backgroundColor: isMyContribution ? (isDarkMode ? 'rgba(167, 139, 250, 0.15)' : '#ECE9FC') : (isDarkMode ? 'rgba(236, 72, 153, 0.15)' : '#FCE7F3') }
+                        ]}>
+                          <ThemedText style={[
+                            styles.badgeText,
+                            { color: isMyContribution ? purpleAccent : '#EC4899' }
                           ]}>
-                            <ThemedText style={[
-                              styles.badgeText,
-                              { color: isMyContribution ? purpleAccent : '#EC4899' }
-                            ]}>
-                              {isMyContribution ? 'You' : 'Partner'}
-                            </ThemedText>
-                          </View>
-                        </View>
-                        <View style={styles.rowRight}>
-                          <ThemedText style={[styles.rowAmount, { color: isDarkMode ? '#FFFFFF' : '#1E1B4B' }]}>
-                            {formatCurrency(Number(item.amount))}
+                            {isMyContribution ? 'You' : 'Partner'}
                           </ThemedText>
-                          
-                          {isMyContribution ? (
-                            <Pressable
-                              onPress={() => handleDeleteSaving(item.id)}
-                              style={({ pressed }) => [
-                                styles.deleteButton,
-                                {
-                                  backgroundColor: pressed ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
-                                }
-                              ]}
-                            >
-                              <IconSymbol name="trash.fill" size={16} color="#EF4444" />
-                            </Pressable>
-                          ) : (
-                            <View style={styles.lockIconWrapper}>
-                              <IconSymbol name="lock.fill" size={14} color={isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.25)'} />
-                            </View>
-                          )}
                         </View>
                       </View>
+                      <View style={styles.rowRight}>
+                        <ThemedText style={[styles.rowAmount, { color: isDarkMode ? '#FFFFFF' : '#1E1B4B' }]}>
+                          {formatCurrency(Number(item.amount))}
+                        </ThemedText>
+                        
+                        {!isMyContribution && (
+                          <View style={styles.lockIconWrapper}>
+                            <IconSymbol name="lock.fill" size={14} color={isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.25)'} />
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  );
+
+                  return (
+                    <View key={item.id}>
+                      {isMyContribution ? (
+                        <Swipeable
+                          renderRightActions={() => renderRightActions(item.id)}
+                          friction={1.8}
+                          rightThreshold={40}
+                        >
+                          {rowContent}
+                        </Swipeable>
+                      ) : (
+                        rowContent
+                      )}
                       {index < savings.length - 1 && <View style={[styles.rowDivider, { backgroundColor: isDarkMode ? '#2D3748' : '#E2E8F0' }]} />}
                     </View>
                   );
@@ -325,6 +338,7 @@ export default function SavingsScreen() {
 
       </ScrollView>
     </ThemedView>
+    </GestureHandlerRootView>
   );
 }
 
@@ -670,5 +684,14 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '600',
+  },
+  swipeDeleteButton: {
+    backgroundColor: '#EF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 60,
+    borderRadius: 12,
+    marginVertical: 4,
+    marginLeft: 12,
   },
 });
