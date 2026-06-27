@@ -17,11 +17,13 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
+  Modal,
   Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
+  TextInput,
   View,
 } from "react-native";
 import {
@@ -51,6 +53,9 @@ export default function SavingsScreen() {
   >("all");
 
   // No Form states
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [newSavingMonth, setNewSavingMonth] = useState("");
+  const [newSavingAmount, setNewSavingAmount] = useState("");
 
   const fetchSavingsData = async (showLoading = true) => {
     if (showLoading) setIsLoading(true);
@@ -108,6 +113,36 @@ export default function SavingsScreen() {
     totalSpent > 0 ? (totalSavings / totalSpent) * 100 : 0;
   const savingsVsBudgetPercent =
     budget.total > 0 ? (totalSavings / budget.total) * 100 : 0;
+
+  const handleAddSaving = async () => {
+    if (!newSavingMonth.trim() || !newSavingAmount.trim()) return;
+    const amountVal = parseFloat(newSavingAmount.replace(/[^0-9.]/g, "")) || 0;
+    if (amountVal <= 0) return;
+
+    try {
+      const token = await getToken();
+      if (!token) return;
+
+      const { data, error: err } = await addSaving(
+        {
+          month: newSavingMonth.trim(),
+          amount: amountVal,
+        },
+        token,
+      );
+
+      if (err || !data) {
+        alert(err ?? "Failed to log saving.");
+      } else {
+        setSavings((prev) => [data, ...prev]);
+        setNewSavingMonth("");
+        setNewSavingAmount("");
+        setIsModalVisible(false);
+      }
+    } catch (err: any) {
+      alert(err.message ?? "Error logging saving.");
+    }
+  };
 
   // Deleted handleAddSaving
 
@@ -504,8 +539,102 @@ export default function SavingsScreen() {
                 })()}
               </>
             )}
+
+            {/* Log Cash In Button */}
+            <Pressable
+              onPress={() => setIsModalVisible(true)}
+              style={({ pressed }) => [
+                styles.cashInButton,
+                {
+                  backgroundColor: accentColor,
+                  opacity: pressed ? 0.85 : 1,
+                }
+              ]}
+            >
+              <IconSymbol name="plus" size={16} color="#FFFFFF" />
+              <ThemedText style={styles.cashInButtonText}>LOG CASH IN</ThemedText>
+            </Pressable>
           </View>
         </ScrollView>
+
+        {/* Log Cash In Modal */}
+        <Modal
+          visible={isModalVisible}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setIsModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: isDarkMode ? "#1E1E1E" : "#ffffff" }]}>
+              <ThemedText style={styles.modalTitle}>Log Cash In</ThemedText>
+
+              <View style={styles.modalForm}>
+                <View style={styles.inputGroup}>
+                  <ThemedText style={styles.modalFieldLabel}>Month / Year</ThemedText>
+                  <TextInput
+                    style={[
+                      styles.modalTextInput,
+                      {
+                        backgroundColor: isDarkMode ? "#2A2A2A" : "#F1F5F9",
+                        color: isDarkMode ? "#FFFFFF" : "#1E1B4B",
+                        borderColor: isDarkMode ? "#3A3A3A" : "#CBD5E1",
+                      },
+                    ]}
+                    value={newSavingMonth}
+                    onChangeText={setNewSavingMonth}
+                    placeholder="e.g. July 2026"
+                    placeholderTextColor={isDarkMode ? "#666666" : "#94A3B8"}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <ThemedText style={styles.modalFieldLabel}>Amount (RM)</ThemedText>
+                  <TextInput
+                    style={[
+                      styles.modalTextInput,
+                      {
+                        backgroundColor: isDarkMode ? "#2A2A2A" : "#F1F5F9",
+                        color: isDarkMode ? "#FFFFFF" : "#1E1B4B",
+                        borderColor: isDarkMode ? "#3A3A3A" : "#CBD5E1",
+                      },
+                    ]}
+                    value={newSavingAmount}
+                    onChangeText={setNewSavingAmount}
+                    keyboardType="numeric"
+                    placeholder="0"
+                    placeholderTextColor={isDarkMode ? "#666666" : "#94A3B8"}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.modalActions}>
+                <Pressable
+                  onPress={() => {
+                    setNewSavingMonth("");
+                    setNewSavingAmount("");
+                    setIsModalVisible(false);
+                  }}
+                  style={[
+                    styles.modalButton,
+                    {
+                      borderColor: isDarkMode ? "#3A3A3A" : "#E2E8F0",
+                      borderWidth: 1,
+                    },
+                  ]}
+                >
+                  <ThemedText style={[styles.modalButtonText, { color: isDarkMode ? "#E2E8F0" : "#4A5568" }]}>Cancel</ThemedText>
+                </Pressable>
+
+                <Pressable
+                  onPress={handleAddSaving}
+                  style={[styles.modalButton, { backgroundColor: accentColor }]}
+                >
+                  <ThemedText style={[styles.modalButtonText, { color: "#FFFFFF", fontWeight: "bold" }]}>Save</ThemedText>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </ThemedView>
     </GestureHandlerRootView>
   );
@@ -899,6 +1028,89 @@ const styles = StyleSheet.create({
   },
   seeMoreText: {
     fontSize: 13,
+    fontWeight: "600",
+  },
+  cashInButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderRadius: 14,
+    height: 48,
+    marginTop: 16,
+    width: "100%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  cashInButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "bold",
+    letterSpacing: 0.5,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  modalContent: {
+    width: "100%",
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  modalForm: {
+    gap: 16,
+    marginBottom: 24,
+  },
+  inputGroup: {
+    width: "100%",
+  },
+  modalFieldLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    opacity: 0.5,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  modalTextInput: {
+    height: 44,
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    height: 44,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalButtonText: {
+    fontSize: 14,
     fontWeight: "600",
   },
 });
