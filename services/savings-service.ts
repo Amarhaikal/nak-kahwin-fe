@@ -16,8 +16,18 @@ export interface CreateSavingEntryPayload {
   amount: number;
 }
 
-export async function getSavings(token: string, filter?: string | null) {
-  const url = (filter && filter !== 'null') ? `/api/savings?filter=${encodeURIComponent(filter)}` : "/api/savings";
+export async function getSavings(token: string, filter?: string | null, limit?: number) {
+  let url = "/api/savings";
+  const params: string[] = [];
+  if (filter && filter !== 'null') {
+    params.push(`filter=${encodeURIComponent(filter)}`);
+  }
+  if (limit !== undefined && limit !== null) {
+    params.push(`limit=${limit}`);
+  }
+  if (params.length > 0) {
+    url += `?${params.join("&")}`;
+  }
   return apiRequest<SavingEntry[]>(url, {
     method: "GET",
     headers: {
