@@ -16,8 +16,9 @@ export interface CreateSavingEntryPayload {
   amount: number;
 }
 
-export async function getSavings(token: string) {
-  return apiRequest<SavingEntry[]>("/api/savings", {
+export async function getSavings(token: string, filter?: string) {
+  const url = filter ? `/api/savings?filter=${encodeURIComponent(filter)}` : "/api/savings";
+  return apiRequest<SavingEntry[]>(url, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,
