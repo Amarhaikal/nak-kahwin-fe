@@ -253,7 +253,7 @@ export default function SavingsScreen() {
         <View style={styles.dashboardContainer}>
           {/* Bank Account-style Card */}
           <LinearGradient
-            colors={isDarkMode ? ['#1E1B4B', '#0F0E17'] : ['#4C1D95', '#6D28D9']}
+            colors={['#4C1D95', '#6D28D9']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.bankCard}
