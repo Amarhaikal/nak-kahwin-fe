@@ -689,8 +689,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#EF4444',
     justifyContent: 'center',
     alignItems: 'center',
-    width: 60,
-    borderRadius: 12,
-    height: '100%',
+    width: 50,
+    borderRadius: 10,
+    height: 34,
+    alignSelf: 'center',
   },
 });
