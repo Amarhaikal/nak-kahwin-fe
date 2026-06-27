@@ -436,7 +436,7 @@ export default function SavingsScreen() {
                       );
                     }
 
-                    const displayed = filtered.slice(0, 6);
+                    const displayed = filtered.slice(0, 5);
                     return displayed.map((item, index) => {
                       const isMyContribution =
                         item.contributorRole === user?.role;
@@ -523,14 +523,14 @@ export default function SavingsScreen() {
                       return item.contributorRole !== user?.role;
                     return true;
                   });
-                  if (filtered.length > 6) {
+                  if (filtered.length > 5) {
                     return (
                       <Pressable
                         onPress={() => router.push("/all-savings")}
                         style={styles.seeMoreBtn}
                       >
                         <ThemedText style={[styles.seeMoreText, { color: accentColor }]}>
-                          See More ({filtered.length - 6} more)
+                          See More ({filtered.length - 5} more)
                         </ThemedText>
                       </Pressable>
                     );
