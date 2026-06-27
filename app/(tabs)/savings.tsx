@@ -28,6 +28,7 @@ export default function SavingsScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'you' | 'partner'>('all');
 
   // Form states
   const [newSavingMonth, setNewSavingMonth] = useState('');
@@ -42,7 +43,7 @@ export default function SavingsScreen() {
         setError('Not authenticated.');
         return;
       }
-      const { data, error: fetchErr } = await getSavings(token);
+      const { data, error: fetchErr } = await getSavings(token, null);
       if (fetchErr || !data) {
         setError(fetchErr ?? 'Failed to retrieve savings records.');
       } else {
@@ -255,31 +256,70 @@ export default function SavingsScreen() {
         </View>
 
         {/* History logs list */}
-        {isLoading && !refreshing ? (
-          <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={accentColor} />
-            <ThemedText style={styles.loadingText}>Loading savings record...</ThemedText>
-          </View>
-        ) : error ? (
-          <View style={styles.centerContainer}>
-            <IconSymbol name="exclamationmark.triangle.fill" size={32} color="#EF4444" />
-            <ThemedText style={styles.errorText}>{error}</ThemedText>
-            <Pressable onPress={() => fetchSavingsData()} style={[styles.retryBtn, { backgroundColor: accentColor }]}>
-              <ThemedText style={styles.retryBtnText}>Retry</ThemedText>
+        <View style={styles.savingsListSection}>
+          <ThemedText style={styles.sectionTitle}>SAVINGS RECORD HISTORY</ThemedText>
+
+          {/* Sliding tab filter */}
+          <View style={[styles.filterContainer, { backgroundColor: isDarkMode ? '#2A2A2A' : '#F1F5F9', borderColor: isDarkMode ? '#3A3A3A' : '#CBD5E1' }]}>
+            <Pressable 
+              onPress={() => setSelectedFilter('all')}
+              style={[styles.filterTab, selectedFilter === 'all' && [styles.activeFilterTab, { backgroundColor: accentColor }]]}
+            >
+              <ThemedText style={[styles.filterTabText, selectedFilter === 'all' && styles.activeFilterTabText, { color: selectedFilter === 'all' ? '#ffffff' : (isDarkMode ? '#A0AEC0' : '#475569') }]}>All</ThemedText>
+            </Pressable>
+            <Pressable 
+              onPress={() => setSelectedFilter('you')}
+              style={[styles.filterTab, selectedFilter === 'you' && [styles.activeFilterTab, { backgroundColor: accentColor }]]}
+            >
+              <ThemedText style={[styles.filterTabText, selectedFilter === 'you' && styles.activeFilterTabText, { color: selectedFilter === 'you' ? '#ffffff' : (isDarkMode ? '#A0AEC0' : '#475569') }]}>You</ThemedText>
+            </Pressable>
+            <Pressable 
+              onPress={() => setSelectedFilter('partner')}
+              style={[styles.filterTab, selectedFilter === 'partner' && [styles.activeFilterTab, { backgroundColor: accentColor }]]}
+            >
+              <ThemedText style={[styles.filterTabText, selectedFilter === 'partner' && styles.activeFilterTabText, { color: selectedFilter === 'partner' ? '#ffffff' : (isDarkMode ? '#A0AEC0' : '#475569') }]}>Partner</ThemedText>
             </Pressable>
           </View>
-        ) : (
-          <View style={styles.savingsListSection}>
-            <ThemedText style={styles.sectionTitle}>SAVINGS RECORD HISTORY</ThemedText>
-            
+
+          {isLoading && !refreshing ? (
+            <View style={styles.centerContainer}>
+              <ActivityIndicator size="large" color={accentColor} />
+              <ThemedText style={styles.loadingText}>Loading savings record...</ThemedText>
+            </View>
+          ) : error ? (
+            <View style={styles.centerContainer}>
+              <IconSymbol name="exclamationmark.triangle.fill" size={32} color="#EF4444" />
+              <ThemedText style={styles.errorText}>{error}</ThemedText>
+              <Pressable onPress={() => fetchSavingsData()} style={[styles.retryBtn, { backgroundColor: accentColor }]}>
+                <ThemedText style={styles.retryBtnText}>Retry</ThemedText>
+              </Pressable>
+            </View>
+          ) : (
             <View style={[styles.listCard, {
               backgroundColor: isDarkMode ? '#1E1E1E' : '#ffffff',
               borderColor: isDarkMode ? '#2D3748' : '#E2E8F0',
             }]}>
-              {savings.length === 0 ? (
-                <ThemedText style={styles.emptyText}>No cash in logs yet.</ThemedText>
-              ) : (
-                savings.map((item, index) => {
+              {(() => {
+                const filtered = savings.filter((item) => {
+                  if (selectedFilter === 'all') return true;
+                  if (selectedFilter === 'you') return item.contributorRole === user?.role;
+                  if (selectedFilter === 'partner') return item.contributorRole !== user?.role;
+                  return true;
+                });
+
+                if (filtered.length === 0) {
+                  return (
+                    <ThemedText style={styles.emptyText}>
+                      {selectedFilter === 'all' 
+                        ? 'No cash in logs yet.' 
+                        : selectedFilter === 'you' 
+                          ? 'You haven\'t logged any savings yet.' 
+                          : 'Your partner hasn\'t logged any savings yet.'}
+                    </ThemedText>
+                  );
+                }
+
+                return filtered.map((item, index) => {
                   const isMyContribution = item.contributorRole === user?.role;
                   
                   const rowContent = (
@@ -327,14 +367,14 @@ export default function SavingsScreen() {
                       ) : (
                         rowContent
                       )}
-                      {index < savings.length - 1 && <View style={[styles.rowDivider, { backgroundColor: isDarkMode ? '#2D3748' : '#E2E8F0' }]} />}
+                      {index < filtered.length - 1 && <View style={[styles.rowDivider, { backgroundColor: isDarkMode ? '#2D3748' : '#E2E8F0' }]} />}
                     </View>
                   );
-                })
-              )}
+                });
+              })()}
             </View>
-          </View>
-        )}
+          )}
+        </View>
 
       </ScrollView>
     </ThemedView>
@@ -693,5 +733,37 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     height: 34,
     alignSelf: 'center',
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    borderRadius: 14,
+    padding: 4,
+    borderWidth: 1,
+    marginBottom: 16,
+    width: '100%',
+  },
+  filterTab: {
+    flex: 1,
+    paddingVertical: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  activeFilterTab: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  filterTabText: {
+    fontSize: 13,
+    fontWeight: '600',
+    opacity: 0.7,
+  },
+  activeFilterTabText: {
+    color: '#ffffff',
+    fontWeight: 'bold',
+    opacity: 1,
   },
 });
