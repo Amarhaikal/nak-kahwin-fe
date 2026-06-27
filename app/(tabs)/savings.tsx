@@ -259,23 +259,44 @@ export default function SavingsScreen() {
         <View style={styles.savingsListSection}>
           <ThemedText style={styles.sectionTitle}>SAVINGS RECORD HISTORY</ThemedText>
 
-          {/* Sliding tab filter */}
-          <View style={[styles.filterContainer, { backgroundColor: isDarkMode ? '#2A2A2A' : '#F1F5F9', borderColor: isDarkMode ? '#3A3A3A' : '#CBD5E1' }]}>
+          {/* Separate filter buttons */}
+          <View style={styles.filterContainer}>
             <Pressable 
               onPress={() => setSelectedFilter('all')}
-              style={[styles.filterTab, selectedFilter === 'all' && [styles.activeFilterTab, { backgroundColor: accentColor }]]}
+              style={[
+                styles.filterTab, 
+                { 
+                  backgroundColor: selectedFilter === 'all' ? accentColor : (isDarkMode ? '#2A2A2A' : '#F1F5F9'),
+                  borderColor: selectedFilter === 'all' ? accentColor : (isDarkMode ? '#3A3A3A' : '#CBD5E1')
+                },
+                selectedFilter === 'all' && styles.activeFilterTab
+              ]}
             >
               <ThemedText style={[styles.filterTabText, selectedFilter === 'all' && styles.activeFilterTabText, { color: selectedFilter === 'all' ? '#ffffff' : (isDarkMode ? '#A0AEC0' : '#475569') }]}>All</ThemedText>
             </Pressable>
             <Pressable 
               onPress={() => setSelectedFilter('you')}
-              style={[styles.filterTab, selectedFilter === 'you' && [styles.activeFilterTab, { backgroundColor: accentColor }]]}
+              style={[
+                styles.filterTab, 
+                { 
+                  backgroundColor: selectedFilter === 'you' ? accentColor : (isDarkMode ? '#2A2A2A' : '#F1F5F9'),
+                  borderColor: selectedFilter === 'you' ? accentColor : (isDarkMode ? '#3A3A3A' : '#CBD5E1')
+                },
+                selectedFilter === 'you' && styles.activeFilterTab
+              ]}
             >
               <ThemedText style={[styles.filterTabText, selectedFilter === 'you' && styles.activeFilterTabText, { color: selectedFilter === 'you' ? '#ffffff' : (isDarkMode ? '#A0AEC0' : '#475569') }]}>You</ThemedText>
             </Pressable>
             <Pressable 
               onPress={() => setSelectedFilter('partner')}
-              style={[styles.filterTab, selectedFilter === 'partner' && [styles.activeFilterTab, { backgroundColor: accentColor }]]}
+              style={[
+                styles.filterTab, 
+                { 
+                  backgroundColor: selectedFilter === 'partner' ? accentColor : (isDarkMode ? '#2A2A2A' : '#F1F5F9'),
+                  borderColor: selectedFilter === 'partner' ? accentColor : (isDarkMode ? '#3A3A3A' : '#CBD5E1')
+                },
+                selectedFilter === 'partner' && styles.activeFilterTab
+              ]}
             >
               <ThemedText style={[styles.filterTabText, selectedFilter === 'partner' && styles.activeFilterTabText, { color: selectedFilter === 'partner' ? '#ffffff' : (isDarkMode ? '#A0AEC0' : '#475569') }]}>Partner</ThemedText>
             </Pressable>
@@ -736,34 +757,30 @@ const styles = StyleSheet.create({
   },
   filterContainer: {
     flexDirection: 'row',
-    borderRadius: 14,
-    padding: 4,
-    borderWidth: 1,
+    gap: 10,
     marginBottom: 16,
     width: '100%',
   },
   filterTab: {
     flex: 1,
-    paddingVertical: 8,
+    height: 36,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 10,
+    borderRadius: 18,
+    borderWidth: 1,
   },
   activeFilterTab: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
   },
   filterTabText: {
     fontSize: 13,
     fontWeight: '600',
-    opacity: 0.7,
   },
   activeFilterTabText: {
-    color: '#ffffff',
     fontWeight: 'bold',
-    opacity: 1,
   },
 });
