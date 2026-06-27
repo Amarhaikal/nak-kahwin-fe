@@ -92,6 +92,7 @@ function InnerLayout() {
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="register" options={{ headerShown: false }} />
           <Stack.Screen name="create-plan" options={{ headerShown: false }} />
+          <Stack.Screen name="all-savings" options={{ headerTitle: "Savings History", headerBackTitle: "Back" }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         </Stack>
       </AuthGate>

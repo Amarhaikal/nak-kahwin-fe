@@ -12,6 +12,7 @@ import {
   SavingEntry,
 } from "@/services/savings-service";
 import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -368,15 +369,116 @@ export default function SavingsScreen() {
                 </Pressable>
               </View>
             ) : (
-              <View
-                style={[
-                  styles.listCard,
-                  {
-                    backgroundColor: isDarkMode ? "#1E1E1E" : "#ffffff",
-                    borderColor: isDarkMode ? "#2D3748" : "#E2E8F0",
-                  },
-                ]}
-              >
+              <>
+                <View
+                  style={[
+                    styles.listCard,
+                    {
+                      backgroundColor: isDarkMode ? "#1E1E1E" : "#ffffff",
+                      borderColor: isDarkMode ? "#2D3748" : "#E2E8F0",
+                    },
+                  ]}
+                >
+                  {(() => {
+                    const filtered = savings.filter((item) => {
+                      if (selectedFilter === "all") return true;
+                      if (selectedFilter === "you")
+                        return item.contributorRole === user?.role;
+                      if (selectedFilter === "partner")
+                        return item.contributorRole !== user?.role;
+                      return true;
+                    });
+
+                    if (filtered.length === 0) {
+                      return (
+                        <ThemedText style={styles.emptyText}>
+                          {selectedFilter === "all"
+                            ? "No cash in logs yet."
+                            : selectedFilter === "you"
+                              ? "You haven't logged any savings yet."
+                              : "Your partner hasn't logged any savings yet."}
+                        </ThemedText>
+                      );
+                    }
+
+                    const displayed = filtered.slice(0, 6);
+                    return displayed.map((item, index) => {
+                      const isMyContribution =
+                        item.contributorRole === user?.role;
+
+                      const rowContent = (
+                        <View
+                          style={[
+                            styles.savingRow,
+                            {
+                              backgroundColor: isDarkMode ? "#1E1E1E" : "#ffffff",
+                            },
+                          ]}
+                        >
+                          <View style={styles.rowLeft}>
+                            <ThemedText style={styles.rowMonth}>
+                              {item.month}
+                            </ThemedText>
+                          </View>
+                          <View style={styles.rowRight}>
+                            <ThemedText
+                              style={[
+                                styles.rowAmount,
+                                { color: isDarkMode ? "#FFFFFF" : "#1E1B4B" },
+                              ]}
+                            >
+                              {formatCurrency(Number(item.amount))}
+                            </ThemedText>
+
+                            {!isMyContribution && (
+                              <View style={styles.lockIconWrapper}>
+                                <IconSymbol
+                                  name="lock.fill"
+                                  size={14}
+                                  color={
+                                    isDarkMode
+                                      ? "rgba(255,255,255,0.25)"
+                                      : "rgba(0,0,0,0.25)"
+                                  }
+                                />
+                              </View>
+                            )}
+                          </View>
+                        </View>
+                      );
+
+                      return (
+                        <View key={item.id}>
+                          {isMyContribution ? (
+                            <Swipeable
+                              renderRightActions={() =>
+                                renderRightActions(item.id)
+                              }
+                              friction={1.8}
+                              rightThreshold={40}
+                            >
+                              {rowContent}
+                            </Swipeable>
+                          ) : (
+                            rowContent
+                          )}
+                          {index < displayed.length - 1 && (
+                            <View
+                              style={[
+                                styles.rowDivider,
+                                {
+                                  backgroundColor: isDarkMode
+                                    ? "#2D3748"
+                                    : "#E2E8F0",
+                                },
+                              ]}
+                            />
+                          )}
+                        </View>
+                      );
+                    });
+                  })()}
+                </View>
                 {(() => {
                   const filtered = savings.filter((item) => {
                     if (selectedFilter === "all") return true;
@@ -386,96 +488,21 @@ export default function SavingsScreen() {
                       return item.contributorRole !== user?.role;
                     return true;
                   });
-
-                  if (filtered.length === 0) {
+                  if (filtered.length > 6) {
                     return (
-                      <ThemedText style={styles.emptyText}>
-                        {selectedFilter === "all"
-                          ? "No cash in logs yet."
-                          : selectedFilter === "you"
-                            ? "You haven't logged any savings yet."
-                            : "Your partner hasn't logged any savings yet."}
-                      </ThemedText>
+                      <Pressable
+                        onPress={() => router.push("/all-savings")}
+                        style={styles.seeMoreBtn}
+                      >
+                        <ThemedText style={[styles.seeMoreText, { color: accentColor }]}>
+                          See More ({filtered.length - 6} more)
+                        </ThemedText>
+                      </Pressable>
                     );
                   }
-
-                  return filtered.map((item, index) => {
-                    const isMyContribution =
-                      item.contributorRole === user?.role;
-
-                    const rowContent = (
-                      <View
-                        style={[
-                          styles.savingRow,
-                          {
-                            backgroundColor: isDarkMode ? "#1E1E1E" : "#ffffff",
-                          },
-                        ]}
-                      >
-                        <View style={styles.rowLeft}>
-                          <ThemedText style={styles.rowMonth}>
-                            {item.month}
-                          </ThemedText>
-                        </View>
-                        <View style={styles.rowRight}>
-                          <ThemedText
-                            style={[
-                              styles.rowAmount,
-                              { color: isDarkMode ? "#FFFFFF" : "#1E1B4B" },
-                            ]}
-                          >
-                            {formatCurrency(Number(item.amount))}
-                          </ThemedText>
-
-                          {!isMyContribution && (
-                            <View style={styles.lockIconWrapper}>
-                              <IconSymbol
-                                name="lock.fill"
-                                size={14}
-                                color={
-                                  isDarkMode
-                                    ? "rgba(255,255,255,0.25)"
-                                    : "rgba(0,0,0,0.25)"
-                                }
-                              />
-                            </View>
-                          )}
-                        </View>
-                      </View>
-                    );
-
-                    return (
-                      <View key={item.id}>
-                        {isMyContribution ? (
-                          <Swipeable
-                            renderRightActions={() =>
-                              renderRightActions(item.id)
-                            }
-                            friction={1.8}
-                            rightThreshold={40}
-                          >
-                            {rowContent}
-                          </Swipeable>
-                        ) : (
-                          rowContent
-                        )}
-                        {index < filtered.length - 1 && (
-                          <View
-                            style={[
-                              styles.rowDivider,
-                              {
-                                backgroundColor: isDarkMode
-                                  ? "#2D3748"
-                                  : "#E2E8F0",
-                              },
-                            ]}
-                          />
-                        )}
-                      </View>
-                    );
-                  });
+                  return null;
                 })()}
-              </View>
+              </>
             )}
           </View>
         </ScrollView>
@@ -863,5 +890,15 @@ const styles = StyleSheet.create({
   },
   activeFilterTabText: {
     fontWeight: "bold",
+  },
+  seeMoreBtn: {
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+  },
+  seeMoreText: {
+    fontSize: 13,
+    fontWeight: "600",
   },
 });
