@@ -8,6 +8,7 @@ export interface SavingEntry {
   contributorRole: "groom" | "bride";
   month: string;
   amount: number;
+  position: number;
   createdAt: string;
 }
 
@@ -52,5 +53,15 @@ export async function deleteSaving(savingId: string, token: string) {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+  });
+}
+
+export async function reorderSavings(orderedIds: string[], token: string) {
+  return apiRequest<{ message: string }>("/api/savings/reorder", {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(orderedIds),
   });
 }
