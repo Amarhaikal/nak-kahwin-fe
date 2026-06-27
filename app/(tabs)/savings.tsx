@@ -416,35 +416,6 @@ export default function SavingsScreen() {
                           <ThemedText style={styles.rowMonth}>
                             {item.month}
                           </ThemedText>
-
-                          {/* Partner Tag Badge */}
-                          <View
-                            style={[
-                              styles.badgeContainer,
-                              {
-                                backgroundColor: isMyContribution
-                                  ? isDarkMode
-                                    ? "rgba(167, 139, 250, 0.15)"
-                                    : "#ECE9FC"
-                                  : isDarkMode
-                                    ? "rgba(236, 72, 153, 0.15)"
-                                    : "#FCE7F3",
-                              },
-                            ]}
-                          >
-                            <ThemedText
-                              style={[
-                                styles.badgeText,
-                                {
-                                  color: isMyContribution
-                                    ? purpleAccent
-                                    : "#EC4899",
-                                },
-                              ]}
-                            >
-                              {isMyContribution ? "You" : "Partner"}
-                            </ThemedText>
-                          </View>
                         </View>
                         <View style={styles.rowRight}>
                           <ThemedText
