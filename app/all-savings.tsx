@@ -527,7 +527,6 @@ export default function AllSavingsScreen() {
               <>
                 <View style={styles.listHeaderRow}>
                   <ThemedText style={styles.sectionTitle}>SAVINGS RECORD HISTORY</ThemedText>
-                  <ThemedText style={styles.instructionText}>Hold & drag row to reorder</ThemedText>
                 </View>
 
                 {filtered.length === 0 ? (
