@@ -8,14 +8,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { LinearGradient } from 'expo-linear-gradient';
-import { 
-  getSavings, 
-  createSavingsGoal, 
-  deleteSavingsGoal, 
-  createContribution, 
-  deleteContribution, 
-  SavingsGoal 
-} from '@/services/savings-service';
+import { getSavings, addSaving, deleteSaving, SavingEntry } from '@/services/savings-service';
 
 const { width } = Dimensions.get('window');
 
@@ -29,18 +22,15 @@ export default function SavingsScreen() {
   const { user } = useAuth();
   const { budget, title } = useWeddingDetails();
 
-  // API State
-  const [goals, setGoals] = useState<SavingsGoal[]>([]);
+  // API states
+  const [savings, setSavings] = useState<SavingEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Form states
-  const [showGoalForm, setShowGoalForm] = useState(false);
-  const [newGoalTitle, setNewGoalTitle] = useState('');
-  const [newGoalTarget, setNewGoalTarget] = useState('');
-  const [contributionInputs, setContributionInputs] = useState<{[goalId: string]: string}>({});
-  const [expandedGoals, setExpandedGoals] = useState<{[goalId: string]: boolean}>({});
+  const [newSavingMonth, setNewSavingMonth] = useState('');
+  const [newSavingAmount, setNewSavingAmount] = useState('');
 
   const fetchSavingsData = async (showLoading = true) => {
     if (showLoading) setIsLoading(true);
@@ -53,9 +43,9 @@ export default function SavingsScreen() {
       }
       const { data, error: fetchErr } = await getSavings(token);
       if (fetchErr || !data) {
-        setError(fetchErr ?? 'Failed to retrieve savings data.');
+        setError(fetchErr ?? 'Failed to retrieve savings records.');
       } else {
-        setGoals(data);
+        setSavings(data);
       }
     } catch (err: any) {
       setError(err.message ?? 'An error occurred while fetching savings.');
@@ -82,149 +72,58 @@ export default function SavingsScreen() {
     budget.ring.spent + 
     budget.others.spent;
 
-  const totalSavings = goals.reduce((acc, curr) => acc + Number(curr.currentAmount), 0);
-  const groomSavings = goals.reduce((acc, goal) => {
-    const goalGroom = goal.contributions
-      .filter(c => c.contributorRole === 'groom')
-      .reduce((s, c) => s + Number(c.amount), 0);
-    return acc + goalGroom;
-  }, 0);
-
-  const brideSavings = goals.reduce((acc, goal) => {
-    const goalBride = goal.contributions
-      .filter(c => c.contributorRole === 'bride')
-      .reduce((s, c) => s + Number(c.amount), 0);
-    return acc + goalBride;
-  }, 0);
-
+  const totalSavings = savings.reduce((acc, curr) => acc + Number(curr.amount), 0);
+  const groomSavings = savings.filter(s => s.contributorRole === 'groom').reduce((acc, curr) => acc + Number(curr.amount), 0);
+  const brideSavings = savings.filter(s => s.contributorRole === 'bride').reduce((acc, curr) => acc + Number(curr.amount), 0);
   const remainingTarget = Math.max(0, budget.total - totalSavings);
   
   const savingsVsSpentPercent = totalSpent > 0 ? (totalSavings / totalSpent) * 100 : 0;
   const savingsVsBudgetPercent = budget.total > 0 ? (totalSavings / budget.total) * 100 : 0;
 
-  const handleCreateGoal = async () => {
-    if (!newGoalTitle.trim() || !newGoalTarget.trim()) return;
-    const targetVal = parseFloat(newGoalTarget.replace(/[^0-9.]/g, '')) || 0;
-    if (targetVal <= 0) return;
-
-    try {
-      const token = await getToken();
-      if (!token) return;
-
-      const { data, error: err } = await createSavingsGoal({
-        title: newGoalTitle.trim(),
-        targetAmount: targetVal
-      }, token);
-
-      if (err || !data) {
-        alert(err ?? 'Failed to create savings goal.');
-      } else {
-        setGoals(prev => [...prev, data]);
-        setNewGoalTitle('');
-        setNewGoalTarget('');
-        setShowGoalForm(false);
-      }
-    } catch (err: any) {
-      alert(err.message ?? 'Error creating savings goal.');
-    }
-  };
-
-  const handleDeleteGoal = async (goalId: string) => {
-    try {
-      const token = await getToken();
-      if (!token) return;
-
-      const { error: err } = await deleteSavingsGoal(goalId, token);
-      if (err) {
-        alert(err);
-      } else {
-        setGoals(prev => prev.filter(g => g.id !== goalId));
-      }
-    } catch (err: any) {
-      alert(err.message ?? 'Error deleting savings goal.');
-    }
-  };
-
-  const handleAddContribution = async (goalId: string) => {
-    const rawVal = contributionInputs[goalId] || '';
-    if (!rawVal.trim()) return;
-    const amountVal = parseFloat(rawVal.replace(/[^0-9.]/g, '')) || 0;
+  const handleAddSaving = async () => {
+    if (!newSavingMonth.trim() || !newSavingAmount.trim()) return;
+    const amountVal = parseFloat(newSavingAmount.replace(/[^0-9.]/g, '')) || 0;
     if (amountVal <= 0) return;
 
     try {
       const token = await getToken();
       if (!token) return;
 
-      const { data, error: err } = await createContribution(goalId, { amount: amountVal }, token);
+      const { data, error: err } = await addSaving({
+        month: newSavingMonth.trim(),
+        amount: amountVal
+      }, token);
+
       if (err || !data) {
-        alert(err ?? 'Failed to add contribution deposit.');
+        alert(err ?? 'Failed to log saving.');
       } else {
-        // Update local goals state to reflect the changes
-        setGoals(prev => prev.map(g => {
-          if (g.id === goalId) {
-            const updatedContributions = [data, ...(g.contributions || [])];
-            return {
-              ...g,
-              currentAmount: Number(g.currentAmount) + amountVal,
-              contributions: updatedContributions
-            };
-          }
-          return g;
-        }));
-        setContributionInputs(prev => ({ ...prev, [goalId]: '' }));
+        setSavings(prev => [data, ...prev]);
+        setNewSavingMonth('');
+        setNewSavingAmount('');
       }
     } catch (err: any) {
-      alert(err.message ?? 'Error adding contribution.');
+      alert(err.message ?? 'Error logging saving.');
     }
   };
 
-  const handleDeleteContribution = async (goalId: string, contributionId: string) => {
+  const handleDeleteSaving = async (savingId: string) => {
     try {
       const token = await getToken();
       if (!token) return;
 
-      const { error: err } = await deleteContribution(contributionId, token);
+      const { error: err } = await deleteSaving(savingId, token);
       if (err) {
         alert(err);
       } else {
-        // Update local goals state
-        setGoals(prev => prev.map(g => {
-          if (g.id === goalId) {
-            const contrib = g.contributions.find(c => c.id === contributionId);
-            const subAmount = contrib ? Number(contrib.amount) : 0;
-            return {
-              ...g,
-              currentAmount: Math.max(0, Number(g.currentAmount) - subAmount),
-              contributions: g.contributions.filter(c => c.id !== contributionId)
-            };
-          }
-          return g;
-        }));
+        setSavings(prev => prev.filter(s => s.id !== savingId));
       }
     } catch (err: any) {
-      alert(err.message ?? 'Error removing contribution.');
+      alert(err.message ?? 'Error deleting saving.');
     }
-  };
-
-  const toggleExpandGoal = (goalId: string) => {
-    setExpandedGoals(prev => ({
-      ...prev,
-      [goalId]: !prev[goalId]
-    }));
   };
 
   const formatCurrency = (amount: number) => {
     return `RM ${amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
-  };
-
-  const formatDate = (dateStr: string) => {
-    try {
-      const d = new Date(dateStr);
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
-    } catch {
-      return dateStr;
-    }
   };
 
   return (
@@ -251,49 +150,48 @@ export default function SavingsScreen() {
 
         {/* Core summary dashboard */}
         <View style={styles.dashboardContainer}>
-          {/* Bank Account-style Card */}
-          <LinearGradient
-            colors={['#4C1D95', '#6D28D9']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.bankCard}
-          >
-            {/* Overlay reflection shine for debit card realism */}
-            <View style={styles.cardShine} />
-
-            {/* Bank Card Balance */}
-            <View style={[styles.bankCardBalanceContainer, { marginTop: 0 }]}>
-              <View style={styles.balanceCol}>
-                <ThemedText style={styles.bankCardBalanceLabel}>AVAILABLE BALANCE</ThemedText>
-                <View style={styles.balanceRow}>
-                  <ThemedText style={styles.bankCardBalanceText}>
-                    {formatCurrency(totalSavings)}
-                  </ThemedText>
-                </View>
-              </View>
-            </View>
-
-            {/* Bank Card Footer details */}
-            <View style={styles.bankCardFooter}>
-              <View>
-                <ThemedText style={styles.bankCardFooterLabel}>GOAL REMAINING</ThemedText>
-                <ThemedText style={styles.bankCardFooterVal}>
-                  {formatCurrency(remainingTarget)}
-                </ThemedText>
-              </View>
-              <View style={{ alignItems: 'flex-end' }}>
-                <ThemedText style={styles.bankCardFooterLabel}>TARGET BUDGET</ThemedText>
-                <ThemedText style={styles.bankCardFooterVal}>{formatCurrency(budget.total)}</ThemedText>
-              </View>
-            </View>
-          </LinearGradient>
-
-          {/* Analytics progress card */}
           <View style={[styles.dashboardCard, {
             backgroundColor: isDarkMode ? '#1E1E1E' : '#ffffff',
             borderColor: isDarkMode ? '#2D3748' : '#E2E8F0',
-            marginTop: 16,
           }]}>
+            
+            {/* Total Savings Field */}
+            <View style={styles.totalSavingsRow}>
+              <View>
+                <ThemedText style={styles.summaryLabel}>TOTAL ACCUMULATED SAVINGS</ThemedText>
+                <ThemedText style={[styles.savingsText, { color: accentColor }]}>
+                  {formatCurrency(totalSavings)}
+                </ThemedText>
+              </View>
+              <View style={styles.remainingTargetBox}>
+                <ThemedText style={styles.remainingLabel}>GOAL REMAINING</ThemedText>
+                <ThemedText style={[styles.remainingVal, { color: isDarkMode ? '#E2E8F0' : '#1E1B4B' }]}>
+                  {formatCurrency(remainingTarget)}
+                </ThemedText>
+              </View>
+            </View>
+
+            <View style={styles.divider} />
+
+            {/* Split Savings Row */}
+            <View style={styles.splitSavingsContainer}>
+              <View style={styles.splitBox}>
+                <ThemedText style={styles.splitLabel}>YOUR SAVINGS (GROOM)</ThemedText>
+                <ThemedText style={[styles.splitVal, { color: purpleAccent }]}>
+                  {formatCurrency(groomSavings)}
+                </ThemedText>
+              </View>
+              <View style={styles.summaryBoxDivider} />
+              <View style={styles.splitBox}>
+                <ThemedText style={styles.splitLabel}>PARTNER'S SAVINGS (BRIDE)</ThemedText>
+                <ThemedText style={[styles.splitVal, { color: '#EC4899' }]}>
+                  {formatCurrency(brideSavings)}
+                </ThemedText>
+              </View>
+            </View>
+
+            <View style={styles.divider} />
+
             {/* Spent Coverage Meter */}
             <View style={styles.meterWrapper}>
               <View style={styles.meterLabelRow}>
@@ -333,82 +231,69 @@ export default function SavingsScreen() {
                 RM {totalSavings.toLocaleString(undefined, { maximumFractionDigits: 0 })} saved out of RM {budget.total.toLocaleString(undefined, { maximumFractionDigits: 0 })} budget target.
               </ThemedText>
             </View>
+
           </View>
         </View>
 
-        {/* Goal creation Form Toggle button and Form */}
+        {/* Add Cash In form */}
         <View style={styles.savingsFormSection}>
-          <Pressable 
-            onPress={() => setShowGoalForm(!showGoalForm)}
-            style={[styles.createGoalToggleBtn, {
-              backgroundColor: isDarkMode ? '#2A2A2A' : '#ffffff',
-              borderColor: isDarkMode ? '#2D3748' : '#E2E8F0',
-            }]}
-          >
-            <ThemedText style={styles.createGoalToggleText}>
-              {showGoalForm ? 'CLOSE ADD FORM' : 'ADD SAVINGS MONTH / YEAR'}
-            </ThemedText>
-            <IconSymbol name={showGoalForm ? 'chevron.up' : 'plus.circle.fill'} size={18} color={accentColor} />
-          </Pressable>
-
-          {showGoalForm && (
-            <View style={[styles.formCard, {
-              backgroundColor: isDarkMode ? '#1E1E1E' : '#ffffff',
-              borderColor: isDarkMode ? '#2D3748' : '#E2E8F0',
-              marginTop: 10,
-            }]}>
-              <View style={styles.formRow}>
-                <View style={styles.monthBox}>
-                  <ThemedText style={styles.fieldLabel}>Target Period / Year</ThemedText>
-                  <TextInput
-                    style={[styles.savingTextInput, {
-                      backgroundColor: isDarkMode ? '#2A2A2A' : '#F1F5F9',
-                      color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
-                      borderColor: isDarkMode ? '#3A3A3A' : '#CBD5E1',
-                    }]}
-                    value={newGoalTitle}
-                    onChangeText={setNewGoalTitle}
-                    placeholder="e.g. Jun 2026, 2025"
-                    placeholderTextColor={isDarkMode ? '#666666' : '#94A3B8'}
-                  />
-                </View>
-                <View style={styles.amountBox}>
-                  <ThemedText style={styles.fieldLabel}>Target (RM)</ThemedText>
-                  <TextInput
-                    style={[styles.savingTextInput, {
-                      backgroundColor: isDarkMode ? '#2A2A2A' : '#F1F5F9',
-                      color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
-                      borderColor: isDarkMode ? '#3A3A3A' : '#CBD5E1',
-                    }]}
-                    value={newGoalTarget}
-                    onChangeText={setNewGoalTarget}
-                    keyboardType="numeric"
-                    placeholder="0"
-                    placeholderTextColor={isDarkMode ? '#666666' : '#94A3B8'}
-                  />
-                </View>
-                <Pressable
-                  onPress={handleCreateGoal}
-                  style={({ pressed }) => [
-                    styles.addButton,
-                    {
-                      backgroundColor: accentColor,
-                      opacity: pressed ? 0.85 : 1,
-                    }
-                  ]}
-                >
-                  <IconSymbol name="plus" size={20} color="#FFFFFF" />
-                </Pressable>
+          <ThemedText style={styles.sectionTitle}>LOG YOUR CASH IN</ThemedText>
+          
+          <View style={[styles.formCard, {
+            backgroundColor: isDarkMode ? '#1E1E1E' : '#ffffff',
+            borderColor: isDarkMode ? '#2D3748' : '#E2E8F0',
+          }]}>
+            <View style={styles.formRow}>
+              <View style={styles.monthBox}>
+                <ThemedText style={styles.fieldLabel}>Month</ThemedText>
+                <TextInput
+                  style={[styles.savingTextInput, {
+                    backgroundColor: isDarkMode ? '#2A2A2A' : '#F1F5F9',
+                    color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
+                    borderColor: isDarkMode ? '#3A3A3A' : '#CBD5E1',
+                  }]}
+                  value={newSavingMonth}
+                  onChangeText={setNewSavingMonth}
+                  placeholder="e.g. July 2026"
+                  placeholderTextColor={isDarkMode ? '#666666' : '#94A3B8'}
+                />
               </View>
+              <View style={styles.amountBox}>
+                <ThemedText style={styles.fieldLabel}>Amount (RM)</ThemedText>
+                <TextInput
+                  style={[styles.savingTextInput, {
+                    backgroundColor: isDarkMode ? '#2A2A2A' : '#F1F5F9',
+                    color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
+                    borderColor: isDarkMode ? '#3A3A3A' : '#CBD5E1',
+                  }]}
+                  value={newSavingAmount}
+                  onChangeText={setNewSavingAmount}
+                  keyboardType="numeric"
+                  placeholder="0"
+                  placeholderTextColor={isDarkMode ? '#666666' : '#94A3B8'}
+                />
+              </View>
+              <Pressable
+                onPress={handleAddSaving}
+                style={({ pressed }) => [
+                  styles.addButton,
+                  {
+                    backgroundColor: accentColor,
+                    opacity: pressed ? 0.85 : 1,
+                  }
+                ]}
+              >
+                <IconSymbol name="plus" size={20} color="#FFFFFF" />
+              </Pressable>
             </View>
-          )}
+          </View>
         </View>
 
-        {/* Loading and Error States */}
+        {/* History logs list */}
         {isLoading && !refreshing ? (
           <View style={styles.centerContainer}>
             <ActivityIndicator size="large" color={accentColor} />
-            <ThemedText style={styles.loadingText}>Loading savings goals...</ThemedText>
+            <ThemedText style={styles.loadingText}>Loading savings record...</ThemedText>
           </View>
         ) : error ? (
           <View style={styles.centerContainer}>
@@ -419,178 +304,70 @@ export default function SavingsScreen() {
             </Pressable>
           </View>
         ) : (
-          /* Savings Goals Cards */
           <View style={styles.savingsListSection}>
-            <ThemedText style={styles.sectionTitle}>MONTHLY TARGETS & GOALS</ThemedText>
+            <ThemedText style={styles.sectionTitle}>SAVINGS RECORD HISTORY</ThemedText>
             
-            {goals.length === 0 ? (
-              <View style={[styles.emptyCard, {
-                backgroundColor: isDarkMode ? '#1E1E1E' : '#ffffff',
-                borderColor: isDarkMode ? '#2D3748' : '#E2E8F0',
-              }]}>
-                <IconSymbol name="archivebox.fill" size={24} color={isDarkMode ? '#444' : '#ccc'} />
-                <ThemedText style={styles.emptyText}>No savings targets set up yet.</ThemedText>
-              </View>
-            ) : (
-              goals.map((goal) => {
-                const goalProgressPercent = goal.targetAmount > 0 ? (Number(goal.currentAmount) / Number(goal.targetAmount)) * 100 : 0;
-                const isExpanded = !!expandedGoals[goal.id];
-                const contribAmount = contributionInputs[goal.id] || '';
-
-                return (
-                  <View key={goal.id} style={[styles.goalCard, {
-                    backgroundColor: isDarkMode ? '#1E1E1E' : '#ffffff',
-                    borderColor: isDarkMode ? '#2D3748' : '#E2E8F0',
-                  }]}>
-                    
-                    {/* Goal Header: Title, Target, Action */}
-                    <View style={styles.goalHeaderRow}>
-                      <View style={styles.goalTitleContainer}>
-                        <ThemedText style={styles.goalCardTitle}>{goal.title}</ThemedText>
-                        <ThemedText style={styles.goalCardTarget}>
-                          Target: {formatCurrency(Number(goal.targetAmount))}
-                        </ThemedText>
+            <View style={[styles.listCard, {
+              backgroundColor: isDarkMode ? '#1E1E1E' : '#ffffff',
+              borderColor: isDarkMode ? '#2D3748' : '#E2E8F0',
+            }]}>
+              {savings.length === 0 ? (
+                <ThemedText style={styles.emptyText}>No cash in logs yet.</ThemedText>
+              ) : (
+                savings.map((item, index) => {
+                  const isMyContribution = item.contributorRole === user?.role;
+                  return (
+                    <View key={item.id}>
+                      <View style={styles.savingRow}>
+                        <View style={styles.rowLeft}>
+                          <View style={[styles.iconWrapper, { backgroundColor: isDarkMode ? accentColor + '20' : accentColor + '10' }]}>
+                            <IconSymbol name="dollarsign.circle.fill" size={16} color={accentColor} />
+                          </View>
+                          <ThemedText style={styles.rowMonth}>{item.month}</ThemedText>
+                          
+                          {/* Partner Tag Badge */}
+                          <View style={[
+                            styles.badgeContainer,
+                            { backgroundColor: isMyContribution ? (isDarkMode ? 'rgba(167, 139, 250, 0.15)' : '#ECE9FC') : (isDarkMode ? 'rgba(236, 72, 153, 0.15)' : '#FCE7F3') }
+                          ]}>
+                            <ThemedText style={[
+                              styles.badgeText,
+                              { color: isMyContribution ? purpleAccent : '#EC4899' }
+                            ]}>
+                              {isMyContribution ? 'You' : 'Partner'}
+                            </ThemedText>
+                          </View>
+                        </View>
+                        <View style={styles.rowRight}>
+                          <ThemedText style={[styles.rowAmount, { color: isDarkMode ? '#FFFFFF' : '#1E1B4B' }]}>
+                            {formatCurrency(Number(item.amount))}
+                          </ThemedText>
+                          
+                          {isMyContribution ? (
+                            <Pressable
+                              onPress={() => handleDeleteSaving(item.id)}
+                              style={({ pressed }) => [
+                                styles.deleteButton,
+                                {
+                                  backgroundColor: pressed ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
+                                }
+                              ]}
+                            >
+                              <IconSymbol name="trash.fill" size={16} color="#EF4444" />
+                            </Pressable>
+                          ) : (
+                            <View style={styles.lockIconWrapper}>
+                              <IconSymbol name="lock.fill" size={14} color={isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.25)'} />
+                            </View>
+                          )}
+                        </View>
                       </View>
-                      
-                      <View style={styles.goalActions}>
-                        <Pressable 
-                          onPress={() => handleDeleteGoal(goal.id)}
-                          style={({ pressed }) => [
-                            styles.deleteGoalBtn,
-                            { backgroundColor: pressed ? 'rgba(239, 68, 68, 0.15)' : 'transparent' }
-                          ]}
-                        >
-                          <IconSymbol name="trash" size={16} color="#EF4444" />
-                        </Pressable>
-
-                        <Pressable 
-                          onPress={() => toggleExpandGoal(goal.id)}
-                          style={[styles.expandBtn, { backgroundColor: isDarkMode ? '#2D3748' : '#F1F5F9' }]}
-                        >
-                          <IconSymbol name={isExpanded ? 'chevron.up' : 'chevron.down'} size={14} color={isDarkMode ? '#A0AEC0' : '#4A5568'} />
-                        </Pressable>
-                      </View>
+                      {index < savings.length - 1 && <View style={[styles.rowDivider, { backgroundColor: isDarkMode ? '#2D3748' : '#E2E8F0' }]} />}
                     </View>
-
-                    {/* Progress Bar for Goal */}
-                    <View style={styles.goalProgressContainer}>
-                      <View style={styles.goalProgressLabelRow}>
-                        <ThemedText style={styles.goalProgressLabel}>
-                          Saved: <ThemedText style={{ fontWeight: 'bold', color: accentColor }}>{formatCurrency(Number(goal.currentAmount))}</ThemedText>
-                        </ThemedText>
-                        <ThemedText style={[styles.goalProgressPercentText, { color: accentColor }]}>
-                          {goalProgressPercent.toFixed(0)}%
-                        </ThemedText>
-                      </View>
-                      <View style={[styles.goalProgressBarBg, { backgroundColor: isDarkMode ? '#2A2A2A' : '#E2E8F0' }]}>
-                        <View style={[styles.goalProgressBarFill, {
-                          width: `${Math.min(goalProgressPercent, 100)}%`,
-                          backgroundColor: accentColor,
-                        }]} />
-                      </View>
-                    </View>
-
-                    {/* Add Contribution Input for this Goal */}
-                    <View style={styles.contributionAddRow}>
-                      <TextInput
-                        style={[styles.contribTextInput, {
-                          backgroundColor: isDarkMode ? '#2A2A2A' : '#F1F5F9',
-                          color: isDarkMode ? '#FFFFFF' : '#1E1B4B',
-                          borderColor: isDarkMode ? '#3A3A3A' : '#CBD5E1',
-                        }]}
-                        value={contribAmount}
-                        onChangeText={(val) => setContributionInputs(prev => ({ ...prev, [goal.id]: val }))}
-                        keyboardType="numeric"
-                        placeholder="Add deposit (RM)..."
-                        placeholderTextColor={isDarkMode ? '#666666' : '#94A3B8'}
-                      />
-                      <Pressable 
-                        onPress={() => handleAddContribution(goal.id)}
-                        style={({ pressed }) => [
-                          styles.contribSubmitBtn,
-                          {
-                            backgroundColor: accentColor,
-                            opacity: pressed ? 0.85 : 1
-                          }
-                        ]}
-                      >
-                        <ThemedText style={styles.contribSubmitBtnText}>Deposit</ThemedText>
-                      </Pressable>
-                    </View>
-
-                    {/* Expandable Contributions List */}
-                    {isExpanded && (
-                      <View style={styles.expandedSection}>
-                        <View style={[styles.expandedDivider, { backgroundColor: isDarkMode ? '#2D3748' : '#E2E8F0' }]} />
-                        <ThemedText style={styles.depositsListTitle}>DEPOSITS HISTORY</ThemedText>
-                        
-                        {(!goal.contributions || goal.contributions.length === 0) ? (
-                          <ThemedText style={styles.emptyDepositsText}>No deposits logged yet.</ThemedText>
-                        ) : (
-                          goal.contributions.map((contribution, idx) => {
-                            const isMyContrib = contribution.contributorRole === user?.role;
-                            return (
-                              <View key={contribution.id}>
-                                <View style={styles.savingRow}>
-                                  <View style={styles.rowLeft}>
-                                    <View style={[styles.iconWrapper, { backgroundColor: isDarkMode ? accentColor + '20' : accentColor + '10' }]}>
-                                      <IconSymbol name="dollarsign.circle.fill" size={14} color={accentColor} />
-                                    </View>
-                                    <View style={styles.contribMetaContainer}>
-                                      <ThemedText style={styles.rowDate}>{formatDate(contribution.contributedAt)}</ThemedText>
-                                      <ThemedText style={styles.contribNameText}>By: {contribution.contributorName}</ThemedText>
-                                    </View>
-                                    
-                                    {/* Contributor role tag */}
-                                    <View style={[
-                                      styles.badgeContainer,
-                                      { backgroundColor: isMyContrib ? (isDarkMode ? 'rgba(167, 139, 250, 0.15)' : '#ECE9FC') : (isDarkMode ? 'rgba(236, 72, 153, 0.15)' : '#FCE7F3') }
-                                    ]}>
-                                      <ThemedText style={[
-                                        styles.badgeText,
-                                        { color: isMyContrib ? purpleAccent : '#EC4899' }
-                                      ]}>
-                                        {isMyContrib ? 'You' : 'Partner'}
-                                      </ThemedText>
-                                    </View>
-                                  </View>
-                                  
-                                  <View style={styles.rowRight}>
-                                    <ThemedText style={[styles.rowAmount, { color: isDarkMode ? '#FFFFFF' : '#1E1B4B' }]}>
-                                      {formatCurrency(Number(contribution.amount))}
-                                    </ThemedText>
-                                    
-                                    {isMyContrib ? (
-                                      <Pressable
-                                        onPress={() => handleDeleteContribution(goal.id, contribution.id)}
-                                        style={({ pressed }) => [
-                                          styles.deleteButton,
-                                          { backgroundColor: pressed ? 'rgba(239, 68, 68, 0.15)' : 'transparent' }
-                                        ]}
-                                      >
-                                        <IconSymbol name="trash.fill" size={14} color="#EF4444" />
-                                      </Pressable>
-                                    ) : (
-                                      <View style={styles.lockIconWrapper}>
-                                        <IconSymbol name="lock.fill" size={12} color={isDarkMode ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.25)'} />
-                                      </View>
-                                    )}
-                                  </View>
-                                </View>
-                                {idx < goal.contributions.length - 1 && (
-                                  <View style={[styles.rowDivider, { backgroundColor: isDarkMode ? '#2D3748' : '#E2E8F0' }]} />
-                                )}
-                              </View>
-                            );
-                          })
-                        )}
-                      </View>
-                    )}
-
-                  </View>
-                );
-              })
-            )}
+                  );
+                })
+              )}
+            </View>
           </View>
         )}
 
@@ -649,95 +426,36 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 3,
   },
-  bankCard: {
-    borderRadius: 22,
-    padding: 22,
-    overflow: 'hidden',
-    position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 6,
-  },
-  cardShine: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '50%',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    transform: [{ skewY: '-15deg' }, { translateY: -30 }],
-  },
-  bankCardHeader: {
+  totalSavingsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    width: '100%',
   },
-  bankCardLabel: {
+  summaryLabel: {
     fontSize: 10,
     fontWeight: 'bold',
-    color: 'rgba(255, 255, 255, 0.65)',
     letterSpacing: 1,
-    textTransform: 'uppercase',
+    opacity: 0.5,
   },
-  bankCardNumber: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.85)',
-    marginTop: 3,
-    letterSpacing: 1,
-  },
-  bankCardBalanceContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 22,
-  },
-  balanceCol: {
-    flex: 1,
-  },
-  bankCardBalanceLabel: {
-    fontSize: 9,
+  savingsText: {
+    fontSize: 24,
     fontWeight: 'bold',
-    color: 'rgba(255, 255, 255, 0.55)',
-    letterSpacing: 1,
-  },
-  balanceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
     marginTop: 4,
   },
-  bankCardBalanceText: {
-    fontSize: 26,
+  remainingTargetBox: {
+    alignItems: 'flex-end',
+  },
+  remainingLabel: {
+    fontSize: 9,
     fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  eyeBtn: {
-    padding: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bankCardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 22,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
-    paddingTop: 14,
-  },
-  bankCardFooterLabel: {
-    fontSize: 8,
-    fontWeight: 'bold',
-    color: 'rgba(255, 255, 255, 0.5)',
     letterSpacing: 0.8,
+    opacity: 0.5,
   },
-  bankCardFooterVal: {
-    fontSize: 13,
+  remainingVal: {
+    fontSize: 15,
     fontWeight: 'bold',
-    color: '#ffffff',
-    marginTop: 2,
+    marginTop: 4,
   },
   divider: {
     height: 1,
@@ -781,25 +499,6 @@ const styles = StyleSheet.create({
   savingsFormSection: {
     paddingHorizontal: 24,
     marginTop: 24,
-  },
-  createGoalToggleBtn: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  createGoalToggleText: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    letterSpacing: 1.5,
   },
   sectionTitle: {
     fontSize: 12,
@@ -858,184 +557,56 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     marginTop: 24,
   },
-  emptyCard: {
+  listCard: {
     borderRadius: 20,
     borderWidth: 1,
-    paddingVertical: 35,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-  },
-  emptyText: {
-    opacity: 0.5,
-    fontSize: 14,
-  },
-  goalCard: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 16,
-    marginBottom: 16,
+    paddingHorizontal: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.03,
     shadowRadius: 8,
     elevation: 1.5,
   },
-  goalHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  goalTitleContainer: {
-    flex: 1,
-    paddingRight: 10,
-  },
-  goalCardTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  goalCardTarget: {
-    fontSize: 11,
-    opacity: 0.5,
-    marginTop: 2,
-    fontWeight: '500',
-  },
-  goalActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  deleteGoalBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  expandBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  goalProgressContainer: {
-    marginTop: 14,
-  },
-  goalProgressLabelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  goalProgressLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    opacity: 0.7,
-  },
-  goalProgressPercentText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  goalProgressBarBg: {
-    height: 6,
-    borderRadius: 3,
-    width: '100%',
-  },
-  goalProgressBarFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  contributionAddRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 16,
-  },
-  contribTextInput: {
-    flex: 1,
-    height: 36,
-    borderRadius: 8,
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  contribSubmitBtn: {
-    height: 36,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  contribSubmitBtnText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  expandedSection: {
-    marginTop: 12,
-  },
-  expandedDivider: {
-    height: 1,
-    marginVertical: 12,
-  },
-  depositsListTitle: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    letterSpacing: 1.2,
-    opacity: 0.4,
-    marginBottom: 8,
-  },
-  emptyDepositsText: {
-    fontSize: 12,
-    opacity: 0.4,
+  emptyText: {
+    paddingVertical: 24,
     textAlign: 'center',
-    paddingVertical: 10,
+    opacity: 0.5,
+    fontSize: 14,
   },
   savingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 12,
   },
   rowLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    flex: 1,
+    gap: 10,
   },
   iconWrapper: {
-    width: 24,
-    height: 24,
+    width: 28,
+    height: 28,
     borderRadius: 6,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  contribMetaContainer: {
-    flexDirection: 'column',
-  },
-  rowDate: {
-    fontSize: 13,
+  rowMonth: {
+    fontSize: 14,
     fontWeight: '600',
-  },
-  contribNameText: {
-    fontSize: 10,
-    opacity: 0.5,
-    marginTop: 1,
   },
   rowRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
   },
   rowAmount: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: 'bold',
   },
   deleteButton: {
-    width: 26,
-    height: 26,
+    width: 28,
+    height: 28,
     borderRadius: 6,
     justifyContent: 'center',
     alignItems: 'center',
@@ -1043,20 +614,47 @@ const styles = StyleSheet.create({
   rowDivider: {
     height: 1,
   },
+  splitSavingsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    paddingVertical: 4,
+  },
+  splitBox: {
+    flex: 1,
+  },
+  splitLabel: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    letterSpacing: 0.8,
+    opacity: 0.5,
+    marginBottom: 4,
+  },
+  splitVal: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  summaryBoxDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    marginHorizontal: 16,
+  },
   badgeContainer: {
-    paddingHorizontal: 5,
-    paddingVertical: 1,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
     borderRadius: 4,
     marginLeft: 4,
   },
   badgeText: {
-    fontSize: 8,
+    fontSize: 9,
     fontWeight: 'bold',
     textTransform: 'uppercase',
   },
   lockIconWrapper: {
-    width: 26,
-    height: 26,
+    width: 28,
+    height: 28,
     justifyContent: 'center',
     alignItems: 'center',
   },

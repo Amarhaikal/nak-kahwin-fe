@@ -1,42 +1,23 @@
 import { apiRequest } from "./api-client";
 
-export interface SavingsContribution {
-  id: string;
-  goalId: string;
-  contributorId: string;
-  contributorName: string;
-  contributorRole: "groom" | "bride";
-  amount: number;
-  contributedAt: string;
-}
-
-export interface SavingsGoal {
+export interface SavingEntry {
   id: string;
   eventId: string;
-  title: string;
-  targetAmount: number;
-  currentAmount: number;
+  userId: string;
+  contributorName: string;
+  contributorRole: "groom" | "bride";
+  month: string;
+  amount: number;
   createdAt: string;
-  updatedAt: string;
-  contributions: SavingsContribution[];
 }
 
-export interface CreateSavingsGoalPayload {
-  title: string;
-  targetAmount: number;
-}
-
-export interface UpdateSavingsGoalPayload {
-  title: string;
-  targetAmount: number;
-}
-
-export interface CreateContributionPayload {
+export interface CreateSavingEntryPayload {
+  month: string;
   amount: number;
 }
 
 export async function getSavings(token: string) {
-  return apiRequest<SavingsGoal[]>("/api/savings", {
+  return apiRequest<SavingEntry[]>("/api/savings", {
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -44,8 +25,8 @@ export async function getSavings(token: string) {
   });
 }
 
-export async function createSavingsGoal(payload: CreateSavingsGoalPayload, token: string) {
-  return apiRequest<SavingsGoal>("/api/savings/goals", {
+export async function addSaving(payload: CreateSavingEntryPayload, token: string) {
+  return apiRequest<SavingEntry>("/api/savings", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -54,37 +35,8 @@ export async function createSavingsGoal(payload: CreateSavingsGoalPayload, token
   });
 }
 
-export async function updateSavingsGoal(goalId: string, payload: UpdateSavingsGoalPayload, token: string) {
-  return apiRequest<SavingsGoal>(`/api/savings/goals/${goalId}`, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(payload),
-  });
-}
-
-export async function deleteSavingsGoal(goalId: string, token: string) {
-  return apiRequest<{ message: string }>(`/api/savings/goals/${goalId}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-}
-
-export async function createContribution(goalId: string, payload: CreateContributionPayload, token: string) {
-  return apiRequest<SavingsContribution>(`/api/savings/goals/${goalId}/contributions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(payload),
-  });
-}
-
-export async function deleteContribution(contributionId: string, token: string) {
-  return apiRequest<{ message: string }>(`/api/savings/contributions/${contributionId}`, {
+export async function deleteSaving(savingId: string, token: string) {
+  return apiRequest<{ message: string }>(`/api/savings/${savingId}`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`,
