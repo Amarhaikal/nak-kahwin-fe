@@ -26,6 +26,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  withTiming,
   SharedValue,
 } from "react-native-reanimated";
 
@@ -62,13 +63,19 @@ function DraggableRow({
   const isDragging = useSharedValue(false);
   const startY = useSharedValue(0);
   const top = useSharedValue((positions.value[item.id] ?? 0) * ROW_HEIGHT);
+  const hasRendered = useSharedValue(false);
 
   // Keep top value in sync when positions are updated by other items shifting
   useAnimatedReaction(
     () => positions.value[item.id],
     (newIdx) => {
       if (newIdx !== undefined && !isDragging.value) {
-        top.value = withSpring(newIdx * ROW_HEIGHT, { damping: 15, stiffness: 120 });
+        if (!hasRendered.value) {
+          top.value = newIdx * ROW_HEIGHT;
+          hasRendered.value = true;
+        } else {
+          top.value = withTiming(newIdx * ROW_HEIGHT, { duration: 200 });
+        }
       }
     }
   );
@@ -110,7 +117,7 @@ function DraggableRow({
     .onEnd(() => {
       isDragging.value = false;
       const finalIdx = positions.value[item.id] ?? 0;
-      top.value = withSpring(finalIdx * ROW_HEIGHT, { damping: 15, stiffness: 120 }, () => {
+      top.value = withTiming(finalIdx * ROW_HEIGHT, { duration: 200 }, () => {
         // Collect updated order mapping and trigger API request
         const sortedIds = Object.keys(positions.value).sort(
           (a, b) => positions.value[a] - positions.value[b]
@@ -124,7 +131,7 @@ function DraggableRow({
       top: top.value,
       zIndex: isDragging.value ? 99 : 1,
       transform: [
-        { scale: isDragging.value ? withSpring(1.04) : withSpring(1.0) },
+        { scale: isDragging.value ? withTiming(1.04, { duration: 150 }) : withTiming(1.0, { duration: 150 }) },
       ],
       shadowColor: "#000",
       shadowOffset: {
