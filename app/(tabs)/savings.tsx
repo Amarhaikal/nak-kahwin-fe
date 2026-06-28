@@ -291,6 +291,162 @@ export default function SavingsScreen() {
             </LinearGradient>
           </View>
 
+          {/* Milestones Card */}
+          {budget.total > 0 && totalSavings > 0 && (
+            <View style={{ paddingHorizontal: 24, marginTop: 16 }}>
+              <View
+                style={[
+                  styles.milestoneCard,
+                  {
+                    backgroundColor: isDarkMode ? "#1E1E1E" : "#ffffff",
+                    borderColor: isDarkMode ? "#2D3748" : "#E2E8F0",
+                  },
+                ]}
+              >
+                <View style={styles.milestoneHeader}>
+                  <ThemedText style={styles.milestoneSectionTitle}>
+                    SAVINGS MILESTONES
+                  </ThemedText>
+                  {savingsVsBudgetPercent >= 25 && (
+                    <ThemedText style={[styles.milestoneStatus, { color: accentColor }]}>
+                      {savingsVsBudgetPercent >= 100
+                        ? "FULLY FUNDED! 🥳💍"
+                        : savingsVsBudgetPercent >= 75
+                          ? "ALMOST THERE! 🌟"
+                          : savingsVsBudgetPercent >= 50
+                            ? "HALFWAY THERE! 🎉"
+                            : "QUARTER-WAY SAVED! 🍾"}
+                    </ThemedText>
+                  )}
+                </View>
+
+                {/* Milestones Row */}
+                <View style={styles.milestonesRow}>
+                  {/* 25% Milestone */}
+                  <View style={styles.milestoneItem}>
+                    <View
+                      style={[
+                        styles.milestoneBadge,
+                        savingsVsBudgetPercent >= 25
+                          ? { backgroundColor: accentColor }
+                          : { backgroundColor: isDarkMode ? "#2D2D2D" : "#E2E8F0" },
+                      ]}
+                    >
+                      {savingsVsBudgetPercent >= 25 ? (
+                        <IconSymbol name="checkmark" size={14} color="#FFFFFF" />
+                      ) : (
+                        <ThemedText style={styles.milestoneBadgeText}>25%</ThemedText>
+                      )}
+                    </View>
+                    <ThemedText style={styles.milestoneLabel}>25%</ThemedText>
+                  </View>
+
+                  {/* Divider */}
+                  <View
+                    style={[
+                      styles.milestoneLine,
+                      {
+                        backgroundColor:
+                          savingsVsBudgetPercent >= 50
+                            ? accentColor
+                            : isDarkMode
+                              ? "#2D2D2D"
+                              : "#E2E8F0",
+                      },
+                    ]}
+                  />
+
+                  {/* 50% Milestone */}
+                  <View style={styles.milestoneItem}>
+                    <View
+                      style={[
+                        styles.milestoneBadge,
+                        savingsVsBudgetPercent >= 50
+                          ? { backgroundColor: accentColor }
+                          : { backgroundColor: isDarkMode ? "#2D2D2D" : "#E2E8F0" },
+                      ]}
+                    >
+                      {savingsVsBudgetPercent >= 50 ? (
+                        <IconSymbol name="checkmark" size={14} color="#FFFFFF" />
+                      ) : (
+                        <ThemedText style={styles.milestoneBadgeText}>50%</ThemedText>
+                      )}
+                    </View>
+                    <ThemedText style={styles.milestoneLabel}>50%</ThemedText>
+                  </View>
+
+                  {/* Divider */}
+                  <View
+                    style={[
+                      styles.milestoneLine,
+                      {
+                        backgroundColor:
+                          savingsVsBudgetPercent >= 75
+                            ? accentColor
+                            : isDarkMode
+                              ? "#2D2D2D"
+                              : "#E2E8F0",
+                      },
+                    ]}
+                  />
+
+                  {/* 75% Milestone */}
+                  <View style={styles.milestoneItem}>
+                    <View
+                      style={[
+                        styles.milestoneBadge,
+                        savingsVsBudgetPercent >= 75
+                          ? { backgroundColor: accentColor }
+                          : { backgroundColor: isDarkMode ? "#2D2D2D" : "#E2E8F0" },
+                      ]}
+                    >
+                      {savingsVsBudgetPercent >= 75 ? (
+                        <IconSymbol name="checkmark" size={14} color="#FFFFFF" />
+                      ) : (
+                        <ThemedText style={styles.milestoneBadgeText}>75%</ThemedText>
+                      )}
+                    </View>
+                    <ThemedText style={styles.milestoneLabel}>75%</ThemedText>
+                  </View>
+
+                  {/* Divider */}
+                  <View
+                    style={[
+                      styles.milestoneLine,
+                      {
+                        backgroundColor:
+                          savingsVsBudgetPercent >= 100
+                            ? accentColor
+                            : isDarkMode
+                              ? "#2D2D2D"
+                              : "#E2E8F0",
+                      },
+                    ]}
+                  />
+
+                  {/* 100% Milestone */}
+                  <View style={styles.milestoneItem}>
+                    <View
+                      style={[
+                        styles.milestoneBadge,
+                        savingsVsBudgetPercent >= 100
+                          ? { backgroundColor: accentColor }
+                          : { backgroundColor: isDarkMode ? "#2D2D2D" : "#E2E8F0" },
+                      ]}
+                    >
+                      {savingsVsBudgetPercent >= 100 ? (
+                        <IconSymbol name="checkmark" size={14} color="#FFFFFF" />
+                      ) : (
+                        <ThemedText style={styles.milestoneBadgeText}>100%</ThemedText>
+                      )}
+                    </View>
+                    <ThemedText style={styles.milestoneLabel}>100%</ThemedText>
+                  </View>
+                </View>
+              </View>
+            </View>
+          )}
+
           {/* Cash In form removed */}
 
           {/* History logs list */}
@@ -1202,5 +1358,65 @@ const styles = StyleSheet.create({
   modalButtonText: {
     fontSize: 14,
     fontWeight: "600",
+  },
+  milestoneCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 1.5,
+  },
+  milestoneHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  milestoneSectionTitle: {
+    fontSize: 10,
+    fontWeight: "700",
+    opacity: 0.5,
+    letterSpacing: 1,
+  },
+  milestoneStatus: {
+    fontSize: 11,
+    fontWeight: "bold",
+  },
+  milestonesRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 8,
+  },
+  milestoneItem: {
+    alignItems: "center",
+  },
+  milestoneBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  milestoneBadgeText: {
+    fontSize: 10,
+    fontWeight: "bold",
+    opacity: 0.5,
+  },
+  milestoneLabel: {
+    fontSize: 10,
+    fontWeight: "600",
+    opacity: 0.5,
+    marginTop: 4,
+  },
+  milestoneLine: {
+    flex: 1,
+    height: 2,
+    marginHorizontal: 4,
+    alignSelf: "center",
+    marginTop: -14,
   },
 });
