@@ -17,6 +17,7 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -593,7 +594,10 @@ export default function SavingsScreen() {
           animationType="slide"
           onRequestClose={() => setIsModalVisible(false)}
         >
-          <View style={styles.modalOverlay}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.modalOverlay}
+          >
             <View style={[styles.modalContent, { backgroundColor: isDarkMode ? "#1E1E1E" : "#ffffff" }]}>
               <ThemedText style={styles.modalTitle}>Log Cash In</ThemedText>
 
@@ -662,7 +666,7 @@ export default function SavingsScreen() {
                 </Pressable>
               </View>
             </View>
-          </View>
+          </KeyboardAvoidingView>
         </Modal>
       </ThemedView>
     </GestureHandlerRootView>
