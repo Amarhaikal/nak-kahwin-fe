@@ -750,21 +750,23 @@ export default function SavingsScreen() {
             )}
 
             {/* Log Cash In Button */}
-            <Pressable
-              onPress={() => setIsModalVisible(true)}
-              style={({ pressed }) => [
-                styles.cashInButton,
-                {
-                  backgroundColor: accentColor,
-                  opacity: pressed ? 0.85 : 1,
-                },
-              ]}
-            >
-              <IconSymbol name="plus" size={16} color="#FFFFFF" />
-              <ThemedText style={styles.cashInButtonText}>
-                LOG CASH IN
-              </ThemedText>
-            </Pressable>
+            {selectedFilter !== "partner" && (
+              <Pressable
+                onPress={() => setIsModalVisible(true)}
+                style={({ pressed }) => [
+                  styles.cashInButton,
+                  {
+                    backgroundColor: accentColor,
+                    opacity: pressed ? 0.85 : 1,
+                  },
+                ]}
+              >
+                <IconSymbol name="plus" size={16} color="#FFFFFF" />
+                <ThemedText style={styles.cashInButtonText}>
+                  LOG CASH IN
+                </ThemedText>
+              </Pressable>
+            )}
           </View>
         </ScrollView>
 
