@@ -13,7 +13,7 @@ import {
 } from "@/services/savings-service";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -57,6 +57,8 @@ export default function SavingsScreen() {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [newSavingMonth, setNewSavingMonth] = useState("");
   const [newSavingAmount, setNewSavingAmount] = useState("");
+
+  const monthInputRef = useRef<TextInput>(null);
 
   const fetchSavingsData = async (showLoading = true) => {
     if (showLoading) setIsLoading(true);
@@ -616,6 +618,11 @@ export default function SavingsScreen() {
           transparent={true}
           animationType="slide"
           onRequestClose={() => setIsModalVisible(false)}
+          onShow={() => {
+            setTimeout(() => {
+              monthInputRef.current?.focus();
+            }, 80);
+          }}
         >
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -635,6 +642,8 @@ export default function SavingsScreen() {
                     Month / Year
                   </ThemedText>
                   <TextInput
+                    ref={monthInputRef}
+                    autoFocus={true}
                     style={[
                       styles.modalTextInput,
                       {
@@ -1136,7 +1145,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     alignItems: "center",
     padding: 20,
-    paddingBottom: Platform.OS === "ios" ? 40 : 20,
+    paddingBottom: Platform.OS === "ios" ? 20 : 10,
   },
   modalContent: {
     width: "100%",
@@ -1147,6 +1156,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 15,
     elevation: 5,
+    marginBottom: 20,
   },
   modalTitle: {
     fontSize: 18,
