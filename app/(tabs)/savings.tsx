@@ -153,7 +153,20 @@ export default function SavingsScreen() {
     const yearMatch = periodStr.match(/\b\d{4}\b/);
     if (yearMatch) {
       const year = parseInt(yearMatch[0], 10);
-      const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+      const months = [
+        "jan",
+        "feb",
+        "mar",
+        "apr",
+        "may",
+        "jun",
+        "jul",
+        "aug",
+        "sep",
+        "oct",
+        "nov",
+        "dec",
+      ];
       const lowerStr = periodStr.toLowerCase();
       for (let i = 0; i < months.length; i++) {
         if (lowerStr.includes(months[i])) {
@@ -449,8 +462,12 @@ export default function SavingsScreen() {
                         const posA = a.position ?? 0;
                         const posB = b.position ?? 0;
                         if (posA !== posB) return posA - posB;
-                        const dateA = parsePeriodToDate(a.month) || new Date(a.createdAt).getTime();
-                        const dateB = parsePeriodToDate(b.month) || new Date(b.createdAt).getTime();
+                        const dateA =
+                          parsePeriodToDate(a.month) ||
+                          new Date(a.createdAt).getTime();
+                        const dateB =
+                          parsePeriodToDate(b.month) ||
+                          new Date(b.createdAt).getTime();
                         return dateB - dateA;
                       });
 
@@ -476,7 +493,9 @@ export default function SavingsScreen() {
                           style={[
                             styles.savingRow,
                             {
-                              backgroundColor: isDarkMode ? "#1E1E1E" : "#ffffff",
+                              backgroundColor: isDarkMode
+                                ? "#1E1E1E"
+                                : "#ffffff",
                             },
                           ]}
                         >
@@ -559,7 +578,9 @@ export default function SavingsScreen() {
                         onPress={() => router.push("/all-savings")}
                         style={styles.seeMoreBtn}
                       >
-                        <ThemedText style={[styles.seeMoreText, { color: accentColor }]}>
+                        <ThemedText
+                          style={[styles.seeMoreText, { color: accentColor }]}
+                        >
                           See More ({filtered.length - 5} more)
                         </ThemedText>
                       </Pressable>
@@ -578,11 +599,13 @@ export default function SavingsScreen() {
                 {
                   backgroundColor: accentColor,
                   opacity: pressed ? 0.85 : 1,
-                }
+                },
               ]}
             >
               <IconSymbol name="plus" size={16} color="#FFFFFF" />
-              <ThemedText style={styles.cashInButtonText}>LOG CASH IN</ThemedText>
+              <ThemedText style={styles.cashInButtonText}>
+                LOG CASH IN
+              </ThemedText>
             </Pressable>
           </View>
         </ScrollView>
@@ -598,12 +621,19 @@ export default function SavingsScreen() {
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             style={styles.modalOverlay}
           >
-            <View style={[styles.modalContent, { backgroundColor: isDarkMode ? "#1E1E1E" : "#ffffff" }]}>
+            <View
+              style={[
+                styles.modalContent,
+                { backgroundColor: isDarkMode ? "#1E1E1E" : "#ffffff" },
+              ]}
+            >
               <ThemedText style={styles.modalTitle}>Log Cash In</ThemedText>
 
               <View style={styles.modalForm}>
                 <View style={styles.inputGroup}>
-                  <ThemedText style={styles.modalFieldLabel}>Month / Year</ThemedText>
+                  <ThemedText style={styles.modalFieldLabel}>
+                    Month / Year
+                  </ThemedText>
                   <TextInput
                     style={[
                       styles.modalTextInput,
@@ -621,7 +651,9 @@ export default function SavingsScreen() {
                 </View>
 
                 <View style={styles.inputGroup}>
-                  <ThemedText style={styles.modalFieldLabel}>Amount (RM)</ThemedText>
+                  <ThemedText style={styles.modalFieldLabel}>
+                    Amount (RM)
+                  </ThemedText>
                   <TextInput
                     style={[
                       styles.modalTextInput,
@@ -655,14 +687,28 @@ export default function SavingsScreen() {
                     },
                   ]}
                 >
-                  <ThemedText style={[styles.modalButtonText, { color: isDarkMode ? "#E2E8F0" : "#4A5568" }]}>Cancel</ThemedText>
+                  <ThemedText
+                    style={[
+                      styles.modalButtonText,
+                      { color: isDarkMode ? "#E2E8F0" : "#4A5568" },
+                    ]}
+                  >
+                    Cancel
+                  </ThemedText>
                 </Pressable>
 
                 <Pressable
                   onPress={handleAddSaving}
                   style={[styles.modalButton, { backgroundColor: accentColor }]}
                 >
-                  <ThemedText style={[styles.modalButtonText, { color: "#FFFFFF", fontWeight: "bold" }]}>Save</ThemedText>
+                  <ThemedText
+                    style={[
+                      styles.modalButtonText,
+                      { color: "#FFFFFF", fontWeight: "bold" },
+                    ]}
+                  >
+                    Save
+                  </ThemedText>
                 </Pressable>
               </View>
             </View>
@@ -1087,9 +1133,10 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
+    justifyContent: "flex-end",
     alignItems: "center",
-    padding: 24,
+    padding: 20,
+    paddingBottom: Platform.OS === "ios" ? 40 : 20,
   },
   modalContent: {
     width: "100%",
