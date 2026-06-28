@@ -988,17 +988,19 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "rgba(255, 255, 255, 0.55)",
     letterSpacing: 1,
+    lineHeight: 12,
   },
   balanceRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginTop: 4,
+    marginTop: 2,
   },
   bankCardBalanceText: {
     fontSize: 26,
     fontWeight: "bold",
     color: "#ffffff",
+    lineHeight: 32,
   },
   eyeBtn: {
     padding: 4,
@@ -1019,12 +1021,14 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "rgba(255, 255, 255, 0.5)",
     letterSpacing: 0.8,
+    lineHeight: 11,
   },
   bankCardFooterVal: {
     fontSize: 13,
     fontWeight: "bold",
     color: "#ffffff",
-    marginTop: 2,
+    marginTop: 1,
+    lineHeight: 16,
   },
   divider: {
     height: 1,
