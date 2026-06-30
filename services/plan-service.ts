@@ -2,9 +2,11 @@ import { apiRequest, API_BASE_URL } from "./api-client";
 
 export interface PlanDetailsResponse {
   id: string;
+  ownerId: string;
   title: string;
   isEngagementEnabled: boolean;
   ownerName: string;
+  partnerId: string | null;
   partnerName: string | null;
   marriageVenue?: string | null;
   marriageDate?: string | null;
@@ -106,3 +108,23 @@ export async function uploadEventImage(
     return { data: null, error: e.message || "Upload failed." };
   }
 }
+
+export async function invitePartner(eventId: string, partnerEmail: string, accessToken: string) {
+  return apiRequest<PlanDetailsResponse>(`/api/events/${eventId}/partner`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ partnerEmail }),
+  });
+}
+
+export async function removePartner(eventId: string, accessToken: string) {
+  return apiRequest<PlanDetailsResponse>(`/api/events/${eventId}/partner`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+}
+

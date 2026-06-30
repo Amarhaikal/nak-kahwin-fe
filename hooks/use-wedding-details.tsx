@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useAuth, getToken } from "@/hooks/use-auth";
-import { getMyPlan, createPlan, updateEvent, uploadEventImage, PlanDetailsResponse, CreatePlanPayload, UpdateEventPayload } from "@/services/plan-service";
+import { getMyPlan, createPlan, updateEvent, uploadEventImage, PlanDetailsResponse, CreatePlanPayload, UpdateEventPayload, invitePartner, removePartner } from "@/services/plan-service";
 
 export type EventType = "marriage" | "engagement";
 
@@ -37,6 +37,8 @@ interface WeddingDetailsContextType {
   createNewPlan: (payload: CreatePlanPayload) => Promise<string | null>;
   updateEventDetails: (payload: UpdateEventPayload) => Promise<string | null>;
   uploadEventPicture: (uri: string, eventType: EventType) => Promise<string | null>;
+  invitePartnerDetails: (email: string) => Promise<string | null>;
+  removePartnerDetails: () => Promise<string | null>;
   activeEvent: EventType;
   setActiveEvent: (type: EventType) => void;
   marriage: EventDetails | null;
@@ -212,6 +214,42 @@ export function WeddingDetailsProvider({
     }
   };
 
+  const invitePartnerDetails = async (email: string): Promise<string | null> => {
+    try {
+      if (!plan) return "No active event workspace found.";
+      const token = await getToken();
+      if (!token) return "Authentication token not found.";
+
+      const { data, error } = await invitePartner(plan.id, email, token);
+      if (error || !data) {
+        return error ?? "Failed to invite partner.";
+      }
+
+      setPlan(data);
+      return null; // success
+    } catch (err: any) {
+      return err.message ?? "An error occurred during partner invitation.";
+    }
+  };
+
+  const removePartnerDetails = async (): Promise<string | null> => {
+    try {
+      if (!plan) return "No active event workspace found.";
+      const token = await getToken();
+      if (!token) return "Authentication token not found.";
+
+      const { data, error } = await removePartner(plan.id, token);
+      if (error || !data) {
+        return error ?? "Failed to remove partner.";
+      }
+
+      setPlan(data);
+      return null; // success
+    } catch (err: any) {
+      return err.message ?? "An error occurred during partner removal.";
+    }
+  };
+
   const [marriage, setMarriage] = useState<EventDetails | null>(null);
 
   const [engagement, setEngagement] = useState<EventDetails | null>(null);
@@ -318,6 +356,8 @@ export function WeddingDetailsProvider({
         createNewPlan,
         updateEventDetails,
         uploadEventPicture,
+        invitePartnerDetails,
+        removePartnerDetails,
         activeEvent,
         setActiveEvent,
         marriage,
