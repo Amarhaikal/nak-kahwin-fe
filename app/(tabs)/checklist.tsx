@@ -12,6 +12,7 @@ import {
   Platform
 } from 'react-native';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
+import { LinearGradient } from 'expo-linear-gradient';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -71,12 +72,15 @@ export default function ChecklistScreen() {
     } else if (data) {
       setGroups(data);
       // Expand first category by default if none are expanded yet
-      if (Object.keys(expandedCategories).length === 0 && data.length > 0) {
-        setExpandedCategories({ [data[0].id]: true });
-      }
+      setExpandedCategories(prev => {
+        if (Object.keys(prev).length === 0 && data.length > 0) {
+          return { [data[0].id]: true };
+        }
+        return prev;
+      });
     }
     if (showIndicator) setIsLoading(false);
-  }, [user?.accessToken, expandedCategories]);
+  }, [user?.accessToken]);
 
   // Pull-to-refresh
   const handleRefresh = async () => {
@@ -89,7 +93,7 @@ export default function ChecklistScreen() {
     if (user?.accessToken) {
       loadChecklist();
     }
-  }, [user?.accessToken]);
+  }, [user?.accessToken, loadChecklist]);
 
   // Add Item to a Group
   const handleAddTask = async (groupId: string) => {
@@ -371,6 +375,14 @@ export default function ChecklistScreen() {
     );
   };
 
+  const isDarkMode = colorScheme === 'dark';
+
+  // Checklist statistics
+  const totalTasks = groups.reduce((acc, g) => acc + g.items.length, 0);
+  const completedTasks = groups.reduce((acc, g) => acc + g.items.filter(t => t.isCompleted).length, 0);
+  const remainingTasks = totalTasks - completedTasks;
+  const progressPercent = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemedView style={styles.container}>
@@ -381,34 +393,90 @@ export default function ChecklistScreen() {
             <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={accentColor} />
           }
         >
-          {/* Header Row */}
-          <View style={styles.header}>
-            <View style={styles.headerTopRow}>
-              <ThemedText type="title" style={styles.headerTitle}>Checklist</ThemedText>
-              <View style={styles.headerActions}>
-                <Pressable
-                  onPress={() => setReorderMode(!reorderMode)}
-                  style={[
-                    styles.actionPillButton,
-                    { borderColor: colorScheme === 'light' ? '#E2E8F0' : '#2D3748' },
-                    reorderMode && { backgroundColor: accentColor + '20', borderColor: accentColor }
-                  ]}
-                >
-                  <IconSymbol name="list.bullet" size={14} color={reorderMode ? accentColor : theme.icon} />
-                  <ThemedText style={[styles.actionPillText, { color: reorderMode ? accentColor : theme.text }]}>
-                    {reorderMode ? 'Done' : 'Reorder'}
-                  </ThemedText>
-                </Pressable>
-                <Pressable
-                  onPress={() => setIsAddGroupModalVisible(true)}
-                  style={[styles.actionPillButton, { borderColor: colorScheme === 'light' ? '#E2E8F0' : '#2D3748' }]}
-                >
-                  <IconSymbol name="plus" size={14} color={theme.icon} />
-                  <ThemedText style={styles.actionPillText}>Group</ThemedText>
-                </Pressable>
-              </View>
+          {/* Banner header */}
+          <LinearGradient
+            colors={
+              isDarkMode ? ["#2E1065", "#121212"] : [accentColor, "#ECE9FC"]
+            }
+            style={styles.headerBanner}
+          >
+            <View style={styles.bannerOverlay} />
+            <View style={styles.headerContent}>
+              <ThemedText style={styles.screenTitle}>
+                Wedding Checklist
+              </ThemedText>
             </View>
-            <ThemedText style={styles.headerSubtitle}>Collaborative wedding planning tasks</ThemedText>
+          </LinearGradient>
+
+          {/* Core summary dashboard */}
+          <View style={styles.dashboardContainer}>
+            <LinearGradient
+              colors={["#4C1D95", "#6D28D9"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.bankCard}
+            >
+              {/* Overlay reflection shine for debit card realism */}
+              <View style={styles.cardShine} />
+
+              {/* Bank Card Progress */}
+              <View style={[styles.bankCardBalanceContainer, { marginTop: 0 }]}>
+                <View style={styles.balanceCol}>
+                  <ThemedText style={styles.bankCardBalanceLabel}>
+                    TOTAL CHECKLIST PROGRESS
+                  </ThemedText>
+                  <View style={styles.balanceRow}>
+                    <ThemedText style={styles.bankCardBalanceText}>
+                      {progressPercent.toFixed(0)}%
+                    </ThemedText>
+                  </View>
+                </View>
+              </View>
+
+              {/* Bank Card Footer details */}
+              <View style={styles.bankCardFooter}>
+                <View>
+                  <ThemedText style={styles.bankCardFooterLabel}>
+                    COMPLETED TASKS
+                  </ThemedText>
+                  <ThemedText style={styles.bankCardFooterVal}>
+                    {completedTasks} / {totalTasks}
+                  </ThemedText>
+                </View>
+                <View style={{ alignItems: "flex-end" }}>
+                  <ThemedText style={styles.bankCardFooterLabel}>
+                    PENDING TASKS
+                  </ThemedText>
+                  <ThemedText style={styles.bankCardFooterVal}>
+                    {remainingTasks}
+                  </ThemedText>
+                </View>
+              </View>
+            </LinearGradient>
+          </View>
+
+          {/* Actions Row */}
+          <View style={styles.actionsRow}>
+            <Pressable
+              onPress={() => setReorderMode(!reorderMode)}
+              style={[
+                styles.actionPillButton,
+                { borderColor: colorScheme === 'light' ? '#E2E8F0' : '#2D3748' },
+                reorderMode && { backgroundColor: accentColor + '20', borderColor: accentColor }
+              ]}
+            >
+              <IconSymbol name="list.bullet" size={14} color={reorderMode ? accentColor : theme.icon} />
+              <ThemedText style={[styles.actionPillText, { color: reorderMode ? accentColor : theme.text }]}>
+                {reorderMode ? 'Done' : 'Reorder'}
+              </ThemedText>
+            </Pressable>
+            <Pressable
+              onPress={() => setIsAddGroupModalVisible(true)}
+              style={[styles.actionPillButton, { borderColor: colorScheme === 'light' ? '#E2E8F0' : '#2D3748' }]}
+            >
+              <IconSymbol name="plus" size={14} color={theme.icon} />
+              <ThemedText style={styles.actionPillText}>Group</ThemedText>
+            </Pressable>
           </View>
 
           {/* Loading Indicator */}
@@ -736,32 +804,115 @@ export default function ChecklistScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 60,
   },
   scrollContainer: {
     paddingBottom: 120, // Sit nicely above bottom navigation bar
   },
-  header: {
+  headerBanner: {
+    paddingTop: Platform.OS === 'ios' ? 65 : 45,
+    paddingBottom: 35,
     paddingHorizontal: 24,
-    marginBottom: 24,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    position: 'relative',
+    overflow: 'hidden',
   },
-  headerTopRow: {
+  bannerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  headerContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  screenTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    letterSpacing: 0.5,
+  },
+  dashboardContainer: {
+    paddingHorizontal: 24,
+    marginTop: -20,
+    zIndex: 10,
+  },
+  bankCard: {
+    borderRadius: 22,
+    padding: 22,
+    overflow: 'hidden',
+    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  cardShine: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '50%',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    transform: [{ skewY: '-15deg' }, { translateY: -30 }],
+  },
+  bankCardBalanceContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 22,
   },
-  headerTitle: {
-    fontSize: 28,
+  balanceCol: {
+    flex: 1,
+  },
+  bankCardBalanceLabel: {
+    fontSize: 9,
     fontWeight: 'bold',
+    color: 'rgba(255, 255, 255, 0.55)',
+    letterSpacing: 1,
+    lineHeight: 12,
   },
-  headerSubtitle: {
-    fontSize: 14,
-    opacity: 0.6,
-    marginTop: 4,
-  },
-  headerActions: {
+  balanceRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
+    marginTop: 2,
+  },
+  bankCardBalanceText: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  bankCardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 22,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    paddingTop: 14,
+  },
+  bankCardFooterLabel: {
+    fontSize: 8,
+    fontWeight: 'bold',
+    color: 'rgba(255, 255, 255, 0.5)',
+    letterSpacing: 0.8,
+    lineHeight: 11,
+  },
+  bankCardFooterVal: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginTop: 1,
+    lineHeight: 16,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+    paddingHorizontal: 24,
+    marginTop: 16,
+    marginBottom: 8,
   },
   actionPillButton: {
     flexDirection: 'row',
